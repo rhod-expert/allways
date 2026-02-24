@@ -1,0 +1,8 @@
+-- ============================================================
+-- Allways Show de Premios - Sequences
+-- Oracle 19C
+-- ============================================================
+-- No standalone sequences are needed.
+-- All tables use IDENTITY columns (GENERATED ALWAYS AS IDENTITY)
+-- which internally create and manage sequences automatically.
+-- ============================================================

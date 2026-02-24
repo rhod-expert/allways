@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+frontend/dist/
+
+# Environment variables
+backend/.env
+
+# Uploads (user content)
+backend/uploads/facturas/*
+backend/uploads/productos/*
+!backend/uploads/facturas/.gitkeep
+!backend/uploads/productos/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+.pm2/
+
+# Original high-res images (keep processed versions)
+imgs/
+
+# Claude internal
+.claude/

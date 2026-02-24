@@ -1,0 +1,8 @@
+-- ============================================================
+-- Allways Show de Premios - Admin Seed
+-- Oracle 19C
+-- ============================================================
+-- The default admin user is seeded automatically by the backend
+-- application on first boot. The password hash is generated
+-- using bcrypt at runtime to ensure security.
+-- ============================================================
