@@ -16,9 +16,9 @@ async function verifyRecaptcha(req, res, next) {
     });
   }
 
-  // Skip verification for placeholder tokens (development/testing)
-  if (token === 'v3_placeholder_token') {
-    console.warn('[RECAPTCHA] Token placeholder detectado - omitiendo verificacion');
+  // Skip verification for placeholder tokens ONLY in development
+  if (token === 'v3_placeholder_token' && process.env.NODE_ENV !== 'production') {
+    console.warn('[RECAPTCHA] Token placeholder detectado (dev mode) - omitiendo verificacion');
     return next();
   }
 

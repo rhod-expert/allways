@@ -21,6 +21,9 @@ router.post('/login', loginLimiter, authController.login);
 router.use(verifyToken);
 router.use(adminLimiter);
 
+// ---- Password change ----
+router.put('/cambiar-password', authController.changePassword);
+
 // ---- Dashboard ----
 router.get('/dashboard/stats', dashboardController.getStats);
 router.get('/dashboard/chart', dashboardController.getChartData);

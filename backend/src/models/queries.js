@@ -206,6 +206,16 @@ const ADMIN_UPDATE_LOGIN = `
   UPDATE ALLWAYS_ADMIN SET ULTIMO_LOGIN = CURRENT_TIMESTAMP WHERE ID = :id
 `;
 
+const ADMIN_UPDATE_PASSWORD = `
+  UPDATE ALLWAYS_ADMIN SET PASSWORD_HASH = :passwordHash WHERE ID = :id
+`;
+
+const ADMIN_FIND_BY_ID = `
+  SELECT ID, USERNAME, PASSWORD_HASH, NOMBRE, ROL, ACTIVO
+  FROM ALLWAYS_ADMIN
+  WHERE ID = :id AND ACTIVO = 'S'
+`;
+
 // ============================================================
 // ALLWAYS_ADMIN_LOG
 // ============================================================
@@ -312,6 +322,8 @@ module.exports = {
   ADMIN_INSERT,
   ADMIN_COUNT,
   ADMIN_UPDATE_LOGIN,
+  ADMIN_UPDATE_PASSWORD,
+  ADMIN_FIND_BY_ID,
   ADMIN_LOG_INSERT,
   DASHBOARD_STATS_TOTALS,
   DASHBOARD_STATS_TODAY,

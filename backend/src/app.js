@@ -27,7 +27,9 @@ app.use(cors({
     if (config.cors.origins.includes(origin)) {
       return callback(null, true);
     }
-    return callback(new Error('Origen no permitido por CORS'), false);
+    const err = new Error('Origen no permitido por CORS');
+    err.statusCode = 403;
+    return callback(err, false);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -40,7 +42,7 @@ app.set('trust proxy', 1);
 
 // ---- Body parsers ----
 app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb', parameterLimit: 20 }));
 
 // ---- Request logging (basic) ----
 app.use((req, res, next) => {
@@ -61,8 +63,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     message: 'Allways Show de Premios API funcionando correctamente.',
-    timestamp: new Date().toISOString(),
-    environment: config.nodeEnv
+    timestamp: new Date().toISOString()
   });
 });
 

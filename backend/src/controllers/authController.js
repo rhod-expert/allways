@@ -86,6 +86,72 @@ async function login(req, res, next) {
 }
 
 /**
+ * PUT /api/admin/cambiar-password
+ * Change admin password. Requires current password.
+ */
+async function changePassword(req, res, next) {
+  try {
+    const { passwordActual, passwordNueva } = req.body;
+    const adminId = req.admin.id;
+
+    if (!passwordActual || !passwordNueva) {
+      return res.status(400).json({
+        success: false,
+        message: 'La contrasena actual y la nueva son requeridas.'
+      });
+    }
+
+    if (passwordNueva.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'La nueva contrasena debe tener al menos 8 caracteres.'
+      });
+    }
+
+    // Verify current password
+    const result = await db.execute(queries.ADMIN_FIND_BY_ID, { id: adminId });
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Administrador no encontrado.'
+      });
+    }
+
+    const admin = result.rows[0];
+    const passwordValid = await bcrypt.compare(passwordActual, admin.PASSWORD_HASH);
+
+    if (!passwordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'La contrasena actual es incorrecta.'
+      });
+    }
+
+    // Hash and update new password
+    const newHash = await bcrypt.hash(passwordNueva, 12);
+    await db.execute(queries.ADMIN_UPDATE_PASSWORD, {
+      passwordHash: newHash,
+      id: adminId
+    });
+
+    // Log the action
+    await db.execute(queries.ADMIN_LOG_INSERT, {
+      adminId,
+      accion: 'CAMBIAR_PASSWORD',
+      detalle: 'Contrasena actualizada exitosamente',
+      ip: req.ip || null
+    });
+
+    return res.json({
+      success: true,
+      message: 'Contrasena actualizada exitosamente.'
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
  * Seed admin user on first boot if none exists.
  */
 async function seedAdmin() {
@@ -109,4 +175,4 @@ async function seedAdmin() {
   }
 }
 
-module.exports = { login, seedAdmin };
+module.exports = { login, changePassword, seedAdmin };

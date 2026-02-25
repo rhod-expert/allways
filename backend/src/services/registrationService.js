@@ -11,6 +11,14 @@ const config = require('../config/env');
 const MAX_WIDTH = 1920;
 
 /**
+ * Strip HTML tags from a string for defense-in-depth.
+ */
+function stripHtml(str) {
+  if (!str) return str;
+  return str.replace(/<[^>]*>/g, '').trim();
+}
+
+/**
  * Validate uploaded image using sharp (checks real MIME type).
  * Also resizes if wider than MAX_WIDTH.
  * @param {string} filePath - Path to uploaded file.
@@ -102,16 +110,16 @@ async function register(data, files) {
       // Participant exists - link to existing
       participanteId = existingResult.rows[0].ID;
     } else {
-      // Create new participant
+      // Create new participant (sanitize HTML from all text inputs)
       const insertResult = await connection.execute(
         queries.PARTICIPANTE_INSERT,
         {
-          nombre: nombre.trim(),
+          nombre: stripHtml(nombre),
           cedula: cedula.trim(),
           telefono: telefono.trim(),
           email: (email || '').trim() || null,
-          departamento: (departamento || '').trim() || null,
-          ciudad: (ciudad || '').trim() || null,
+          departamento: stripHtml(departamento || '') || null,
+          ciudad: stripHtml(ciudad || '') || null,
           id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
         },
         { autoCommit: false }
@@ -124,7 +132,7 @@ async function register(data, files) {
       queries.REGISTRO_INSERT,
       {
         participanteId,
-        numeroFactura: numeroFactura.trim(),
+        numeroFactura: stripHtml(numeroFactura),
         cantidadProductos: cantidadNum,
         imagenFactura: facturaFile.filename,
         imagenProductos: productosFilename,

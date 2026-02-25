@@ -9,7 +9,7 @@ const rateLimit = require('express-rate-limit');
 const registroLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  standardHeaders: true,
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: {
     success: false,
@@ -25,7 +25,7 @@ const registroLimiter = rateLimit({
 const consultaLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  standardHeaders: true,
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: {
     success: false,
@@ -41,7 +41,7 @@ const consultaLimiter = rateLimit({
 const adminLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
-  standardHeaders: true,
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: {
     success: false,
@@ -57,7 +57,7 @@ const adminLimiter = rateLimit({
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  standardHeaders: true,
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: {
     success: false,
