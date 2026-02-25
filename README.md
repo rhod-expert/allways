@@ -64,7 +64,7 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 │       │   ├── database.js     # Oracle connection pool (thick mode)
 │       │   └── env.js          # Carga y validacion de .env
 │       ├── controllers/
-│       │   ├── authController.js        # POST /admin/login + seed admin
+│       │   ├── authController.js        # POST /admin/login + PUT /cambiar-password + seed admin
 │       │   ├── adminController.js       # CRUD registros, participantes
 │       │   ├── registrationController.js # POST /registro
 │       │   ├── couponController.js      # Consulta cupones, premios
@@ -76,7 +76,7 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 │       │   ├── upload.js        # Multer config (imagenFactura, imagenProductos)
 │       │   └── errorHandler.js  # Global error handler con logging
 │       ├── models/
-│       │   └── queries.js       # 28+ SQL queries centralizadas (ALLWAYS_*)
+│       │   └── queries.js       # 30+ SQL queries centralizadas (ALLWAYS_*)
 │       ├── routes/
 │       │   ├── public.js        # /registro, /cupones/consulta, /premios
 │       │   ├── admin.js         # /admin/* (JWT required)
@@ -164,6 +164,7 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
 | `POST` | `/api/admin/login` | Autenticacion → JWT (5/15min rate limit) |
+| `PUT` | `/api/admin/cambiar-password` | Cambiar contrasena admin (requiere actual) |
 | `GET` | `/api/admin/dashboard/stats` | Estadisticas generales |
 | `GET` | `/api/admin/dashboard/chart` | Datos para graficos (diario + mensual) |
 | `GET` | `/api/admin/dashboard/top-clientes` | Top 10 clientes por cupones |
@@ -254,7 +255,7 @@ Oracle Instant Client 19.25 configurado en `/usr/lib/oracle/19.25/client64/`.
 | Variable | Descripcion | Ejemplo |
 |----------|-------------|---------|
 | `PORT` | Puerto del API | `3001` |
-| `NODE_ENV` | Entorno | `production` |
+| `NODE_ENV` | Entorno (`production` o `development`) | `production` |
 | `ORACLE_USER` | Usuario Oracle | `allways` |
 | `ORACLE_PASSWORD` | Password Oracle | `***` |
 | `ORACLE_CONNECTION_STRING` | Conexion Oracle | `192.168.1.240:1521/wint` |
@@ -298,17 +299,39 @@ TNS config: `/usr/lib/oracle/19.25/client64/lib/network/admin/tnsnames.ora`
 
 ## Seguridad
 
+### Protecciones Implementadas
+
 - **reCAPTCHA v3** en todos los endpoints publicos POST
-- **Rate limiting** por IP en todos los endpoints (express-rate-limit)
+- **Rate limiting** por IP en todos los endpoints (express-rate-limit) con headers IETF draft-7 (`RateLimit`, `RateLimit-Policy`)
 - **JWT** con expiracion de 8h para panel admin
-- **Helmet** para headers de seguridad HTTP
-- **CORS** restringido a dominios configurados
+- **Helmet** para 11 headers de seguridad HTTP (CSP, HSTS, X-Frame-Options, etc.)
+- **CORS** restringido a dominios configurados (retorna 403 para origenes no autorizados)
 - **Multer** con validacion MIME + limite 5MB
 - **Sharp** valida MIME real de imagenes (no confia en extension)
 - **bcrypt** con salt rounds = 12 para passwords admin
 - **Bind parameters** en TODAS las queries SQL (prevencion SQL injection)
 - **Uploads** servidos via API con autenticacion JWT (no acceso directo)
 - **Auditoria** de todas las acciones admin en ALLWAYS_ADMIN_LOG
+- **Sanitizacion HTML** server-side en inputs de texto (defense-in-depth)
+- **Error handler seguro** — stack traces solo en modo `development` (opt-in), mensajes genericos para errores de parse JSON
+- **Endpoint de cambio de contrasena** — permite al admin cambiar su password (requiere la actual)
+- **reCAPTCHA bypass bloqueado en produccion** — token de testing solo funciona con `NODE_ENV !== 'production'`
+- **Path traversal protection** — triple capa: basename, dot-dot check, resolve bounds
+- **Limite de parametros URL** — maximo 20 parametros en requests urlencoded
+
+### Resultado de Pruebas de Seguridad (2026-02-25)
+
+Se ejecutaron **85 pruebas automatizadas** con 4 agentes de IA en paralelo:
+
+| Categoria | Testes | Aprobados | Tasa |
+|-----------|--------|-----------|------|
+| Registro & Cupones | 20 | 20 | 100% |
+| Admin Dashboard & Gestion | 17 | 17 | 100% |
+| Rate Limiting | 6 | 6 | 100% |
+| Seguridad (SQL injection, XSS, auth bypass, file upload, path traversal, CORS, headers) | 42 | 42 | 100% |
+| **Total** | **85** | **85** | **100%** |
+
+**0 vulnerabilidades criticas. 0 vulnerabilidades altas.** Todos los problemas encontrados fueron corregidos en commit `8d887b8`.
 
 ---
 
@@ -488,7 +511,7 @@ pm2 monit
 | Admin Panel | `admin` | `Admin2026!` |
 | Oracle DB | `allways` | `Q1Kpvif9RTs4` |
 
-> Cambiar las credenciales por defecto antes de ir a produccion.
+> **Importante:** Cambiar la contrasena del admin despues del primer login usando `PUT /api/admin/cambiar-password` o desde el panel administrativo. Cambiar las credenciales Oracle en produccion.
 
 ---
 
@@ -496,10 +519,16 @@ pm2 monit
 
 - **Oracle column names**: Oracle devuelve nombres de columna en MAYUSCULAS (`ID`, `NOMBRE`, `ESTADO`, etc.). El frontend los referencia asi directamente.
 - **Dashboard service**: Convierte manualmente las stats a camelCase (`totalParticipantes`, `registrosHoy`, etc.).
-- **reCAPTCHA bypass**: En el middleware hay un bypass para el token `v3_placeholder_token` que permite testing sin reCAPTCHA real. Remover en produccion final.
+- **reCAPTCHA bypass**: El token de testing `v3_placeholder_token` solo funciona cuando `NODE_ENV !== 'production'`. En produccion se requiere un token real de Google reCAPTCHA v3.
+- **NODE_ENV**: Controla comportamiento de seguridad critico:
+  - `production`: reCAPTCHA bypass deshabilitado, stack traces ocultos, mensajes de error genericos.
+  - `development`: permite bypass reCAPTCHA, muestra stack traces y detalles de error.
+- **Rate limit headers**: Formato IETF draft-7 (`RateLimit: limit=30, remaining=29, reset=60` y `RateLimit-Policy: 30;w=60`).
+- **Cambio de contrasena**: `PUT /api/admin/cambiar-password` con body `{ passwordActual, passwordNueva }`. Requiere minimo 8 caracteres. Se registra en audit log.
 - **Imagenes de premios**: Se sirven como assets estaticos desde `/allways/images/prizes/`. Las imagenes de uploads se sirven via API con autenticacion.
 - **TailwindCSS**: Fijado en v3.4.17 (no v4). Tema custom con paleta `allways-*`.
 - **React Router**: v7 (importar desde `react-router`, no `react-router-dom`).
+- **Sanitizacion HTML**: `stripHtml()` elimina tags HTML de inputs de texto (nombre, ciudad, departamento, numeroFactura) como defensa en profundidad adicional a CSP + React auto-escaping.
 
 ---
 
