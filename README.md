@@ -11,10 +11,11 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 | Capa | Tecnologia | Version |
 |------|-----------|---------|
 | **Runtime** | Node.js | 20.20.0 |
-| **Backend** | Express.js | 4.21.x |
+| **Backend** | Express.js | 4.21.2 |
 | **Frontend** | React + Vite | 18.3 / 6.x |
 | **CSS** | TailwindCSS | 3.4.17 |
 | **Base de datos** | Oracle 19C | Client 19.25 |
+| **ORM/Driver** | node-oracledb | 6.7.1 (thick mode) |
 | **Servidor web** | Nginx | Reverse proxy |
 | **Proceso** | PM2 | Daemon |
 | **SO** | Debian 13 (trixie) | x86_64 |
@@ -88,9 +89,10 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 │           └── recaptchaService.js     # Google reCAPTCHA API
 │
 ├── frontend/                   # React 18 + Vite 6 + TailwindCSS 3.4
-│   ├── public/allways/
+│   ├── public/
 │   │   └── images/
-│   │       ├── prizes/         # Imagenes de premios (11 archivos PNG)
+│   │       ├── prizes/         # Imagenes de premios (10 archivos PNG)
+│   │       ├── brands/         # Logos de marcas Allways
 │   │       ├── logo-allways-blanco.png  # Logo blanco (fondos oscuros)
 │   │       └── logo-allways-dark.png    # Logo oscuro (fondos claros)
 │   ├── dist/                   # Build de produccion (vite build)
@@ -100,7 +102,8 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 │       ├── index.css           # TailwindCSS + custom styles
 │       ├── components/
 │       │   ├── layout/         # Header, Footer, AdminLayout
-│       │   ├── landing/        # HeroSection, PrizesSection, HowToSection...
+│       │   ├── landing/        # HeroSection, PrizesSection, HowToSection,
+│       │   │                   #   BrandsSection, CTASection, FinalDrawSection, GoldParticles
 │       │   ├── admin/          # StatsCard
 │       │   ├── charts/         # LineChartCard, BarChartCard (Recharts)
 │       │   ├── form/           # ImageDropzone
@@ -159,7 +162,7 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 | `GET` | `/api/premios` | Listar premios de la campanha | - |
 | `GET` | `/api/health` | Health check | - |
 
-### Admin (JWT required)
+### Admin (JWT required, 30 req/min rate limit)
 
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
@@ -169,10 +172,10 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 | `GET` | `/api/admin/dashboard/chart` | Datos para graficos (diario + mensual) |
 | `GET` | `/api/admin/dashboard/top-clientes` | Top 10 clientes por cupones |
 | `GET` | `/api/admin/dashboard/mapa` | Distribucion por departamento |
-| `GET` | `/api/admin/registros` | Listar registros (filtros: estado, fecha, busqueda) |
-| `GET` | `/api/admin/registros/:id` | Detalle de registro + cupones |
+| `GET` | `/api/admin/registros` | Listar registros (filtros: estado, fecha, busqueda, paginacion) |
+| `GET` | `/api/admin/registros/:id` | Detalle de registro + cupones + participante |
 | `PUT` | `/api/admin/registros/:id/validar` | Aceptar o rechazar registro |
-| `GET` | `/api/admin/participantes` | Listar participantes |
+| `GET` | `/api/admin/participantes` | Listar participantes con totales |
 | `GET` | `/api/admin/participantes/:id` | Detalle participante + registros |
 | `GET` | `/api/admin/cupones` | Listar todos los cupones |
 | `GET` | `/api/uploads/:type/:filename` | Servir imagenes (facturas/productos) |
@@ -187,6 +190,61 @@ Todas las respuestas siguen el formato:
   "data": { ... },
   "pagination": { "page": 1, "limit": 20, "total": 100, "totalPages": 5 }
 }
+```
+
+### Rate Limit Headers (IETF draft-7)
+
+Todas las respuestas incluyen headers de rate limit:
+```
+RateLimit: limit=30, remaining=29, reset=60
+RateLimit-Policy: 30;w=60
+```
+En respuestas 429 (Too Many Requests) se incluye tambien `Retry-After: <seconds>`.
+
+### Ejemplos de Request/Response
+
+**Registrar participante:**
+```bash
+curl -X POST http://localhost:3001/api/registro \
+  -F "nombre=Juan Perez" \
+  -F "cedula=4567890" \
+  -F "telefono=0981123456" \
+  -F "email=juan@test.com" \
+  -F "ciudad=Asuncion" \
+  -F "departamento=Central" \
+  -F "numeroFactura=001-001-0001234" \
+  -F "cantidadProductos=3" \
+  -F "recaptchaToken=<token>" \
+  -F "imagenFactura=@factura.jpg" \
+  -F "imagenProductos=@productos.jpg"
+# → 201 { success: true, data: { registroId: 1, participanteId: 1 } }
+```
+
+**Aceptar registro (genera cupones):**
+```bash
+curl -X PUT http://localhost:3001/api/admin/registros/1/validar \
+  -H "Authorization: Bearer <jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{"accion":"ACEPTAR"}'
+# → 200 { success: true, data: { estado: "ACEPTADO", cupones: ["AW-2026-435923","AW-2026-590491"] } }
+```
+
+**Rechazar registro:**
+```bash
+curl -X PUT http://localhost:3001/api/admin/registros/2/validar \
+  -H "Authorization: Bearer <jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{"accion":"RECHAZAR","motivo":"Factura ilegible"}'
+# → 200 { success: true, data: { estado: "RECHAZADO", cupones: [] } }
+```
+
+**Cambiar contrasena:**
+```bash
+curl -X PUT http://localhost:3001/api/admin/cambiar-password \
+  -H "Authorization: Bearer <jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{"passwordActual":"Admin2026!","passwordNueva":"NuevaPassword123!"}'
+# → 200 { success: true, message: "Contrasena actualizada exitosamente." }
 ```
 
 ---
@@ -228,11 +286,12 @@ Oracle Instant Client 19.25 configurado en `/usr/lib/oracle/19.25/client64/`.
 ## Logica de Negocio
 
 ### Flujo de Registro (publico)
-1. Participante completa formulario + sube foto factura
-2. Si cedula ya existe, se vincula al participante existente
-3. Se crea registro con estado `PENDIENTE`
-4. Imagenes se validan con Sharp (MIME real, max 1920px ancho)
-5. Archivos se guardan en `uploads/facturas/` y `uploads/productos/`
+1. reCAPTCHA v3 verifica que no es un bot
+2. Campos de texto se sanitizan (strip HTML tags)
+3. Imagenes se validan con Sharp (MIME real, max 1920px ancho, solo JPG/PNG)
+4. Si cedula ya existe, se vincula al participante existente
+5. Se crea registro con estado `PENDIENTE` (transaccion Oracle)
+6. Archivos se guardan en `uploads/facturas/` y `uploads/productos/` con nombre UUID
 
 ### Validacion de Registro (admin)
 1. Admin ve factura en detalle ampliado
@@ -490,17 +549,16 @@ pm2 monit
 
 | Mes | Premio | Imagen |
 |-----|--------|--------|
-| Febrero | Licuadora Personal | licuadora-personal.png |
-| Marzo | Air Fryer | air-fryer.png |
-| Abril | Patinete Electrico | patinete.png |
-| Mayo | Licuadora Oster | licuadora-2.png |
-| Junio | Robo Aspirador | robo-aspirador.png |
-| Julio | Smart TV 55" | tv.png |
-| Agosto | iPhone 16 | iphone.png |
-| Septiembre | Scooter Electrico | scooter.png |
-| Octubre | Air Fryer | air-fryer.png |
-| Noviembre | Moto 0 KM | moto.png |
-| **Diciembre** | **Renault Kwid 0 KM** (sorteo final) | kwid.png |
+| Abril | Licuadora Personal XION 600ml | licuadora-personal.png |
+| Abril | Licuadora Personal XION 380ml | licuadora-2.png |
+| Mayo | Freidora Air Fryer XION 5L | air-fryer.png |
+| Junio | Aspiradora Robot XION | robo-aspirador.png |
+| Julio | TV Smart Audisat 50" | tv.png |
+| Agosto | Motoneta Kenton Viva 110 | moto.png |
+| Septiembre | Scooter Electrico HYE HY-SC8.5 | scooter.png |
+| Octubre | iPhone 16 128GB | iphone.png |
+| Noviembre | Renault Kwid 0km | kwid.png |
+| **Diciembre** | **Renault Kwid 0km** (sorteo final) | kwid.png |
 
 ---
 
@@ -529,6 +587,68 @@ pm2 monit
 - **TailwindCSS**: Fijado en v3.4.17 (no v4). Tema custom con paleta `allways-*`.
 - **React Router**: v7 (importar desde `react-router`, no `react-router-dom`).
 - **Sanitizacion HTML**: `stripHtml()` elimina tags HTML de inputs de texto (nombre, ciudad, departamento, numeroFactura) como defensa en profundidad adicional a CSP + React auto-escaping.
+
+---
+
+## Dependencias Principales
+
+### Backend (package.json)
+
+| Paquete | Version | Uso |
+|---------|---------|-----|
+| express | ^4.21.2 | Framework HTTP |
+| oracledb | ^6.7.1 | Driver Oracle (thick mode) |
+| jsonwebtoken | ^9.0.2 | JWT auth |
+| bcryptjs | ^2.4.3 | Hash de passwords |
+| helmet | ^8.0.0 | Headers de seguridad HTTP |
+| cors | ^2.8.5 | Cross-Origin Resource Sharing |
+| multer | ^1.4.5-lts.1 | Upload de archivos multipart |
+| sharp | ^0.33.5 | Validacion y procesamiento de imagenes |
+| express-rate-limit | ^7.5.0 | Rate limiting por IP |
+| dotenv | ^16.4.7 | Variables de entorno |
+| uuid | ^11.0.5 | Nombres unicos para uploads |
+| axios | ^1.7.9 | HTTP client (reCAPTCHA verify) |
+
+### Frontend (package.json)
+
+| Paquete | Version | Uso |
+|---------|---------|-----|
+| react | ^18.3.0 | UI framework |
+| react-router | ^7.0.0 | Routing SPA |
+| axios | ^1.7.0 | HTTP client API |
+| recharts | ^2.12.0 | Graficos dashboard |
+| framer-motion | ^11.0.0 | Animaciones |
+| lucide-react | ^0.400.0 | Iconos |
+| react-toastify | ^10.0.0 | Notificaciones toast |
+| react-dropzone | ^14.2.0 | Drag & drop de imagenes |
+| tailwindcss | 3.4.17 | CSS utility-first |
+| vite | ^6.0.0 | Bundler + dev server |
+
+---
+
+## Changelog
+
+### v1.1.0 — 2026-02-25 (Security Hardening)
+
+Resultado de pruebas automatizadas con 4 agentes de IA (85 tests, 100% aprobados):
+
+- **FIX** reCAPTCHA bypass token bloqueado en produccion (`NODE_ENV=production`)
+- **FIX** Stack traces solo visibles en `NODE_ENV=development` (opt-in)
+- **FIX** Mensajes genericos para errores de JSON parse
+- **FIX** CORS rejection retorna 403 (antes 500)
+- **FIX** Health endpoint ya no expone `environment`
+- **NEW** `PUT /api/admin/cambiar-password` — cambio de contrasena admin
+- **NEW** Headers de rate limit IETF draft-7 (`RateLimit`, `RateLimit-Policy`)
+- **NEW** Sanitizacion HTML server-side (`stripHtml()`) en inputs de texto
+- **NEW** Limite de parametros URL (max 20)
+
+### v1.0.0 — 2026-02-25 (Initial Release)
+
+- Sistema completo: registro, validacion, cupones, dashboard
+- Frontend React SPA con TailwindCSS
+- Backend Express + Oracle 19C
+- Panel admin con JWT auth
+- reCAPTCHA v3 + rate limiting + Helmet
 
 ---
 
