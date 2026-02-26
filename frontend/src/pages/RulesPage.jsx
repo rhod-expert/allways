@@ -47,9 +47,9 @@ export default function RulesPage() {
             <li>Todos los cupones generados durante la promocion participan automaticamente en el sorteo final del automovil en octubre.</li>
           </ol>
 
-          <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">6. Marcas participantes</h2>
+          <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">6. Productos participantes</h2>
           <p className="text-gray-600 leading-relaxed mb-4">
-            Las marcas cuyos productos participan en la Promocion son: Empalux, Scotch-Brite, Wyda, Allways, Allways Health, Guapo y Trento. El Organizador se reserva el derecho de agregar marcas participantes durante la vigencia de la Promocion, previa comunicacion en el sitio web.
+            Los productos que participan en la Promocion son los de las marcas: Empalux, Scotch-Brite, Wyda, Allways, Allways Health, Guapo y Trento. Consulte la lista completa de productos participantes en la pagina principal. El Organizador se reserva el derecho de agregar productos participantes durante la vigencia de la Promocion, previa comunicacion en el sitio web.
           </p>
 
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">7. Validacion de registros</h2>
