@@ -24,7 +24,7 @@ export default function RulesPage() {
 
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">2. Vigencia</h2>
           <p className="text-gray-600 leading-relaxed mb-4">
-            La Promocion tendra vigencia desde el 1 de febrero de 2026 hasta el 31 de diciembre de 2026, inclusive. Los sorteos mensuales se realizaran el ultimo dia habil de cada mes. El sorteo final del automovil Renault Kwid 0 KM se realizara en diciembre de 2026, en fecha a confirmar.
+            La Promocion tendra vigencia desde el 1 de marzo de 2026 hasta el 30 de septiembre de 2026, inclusive. Los sorteos mensuales se realizaran el ultimo dia habil de cada mes. El sorteo final del automovil Renault Kwid 0 KM se realizara en octubre de 2026, en fecha a confirmar.
           </p>
 
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">3. Ambito territorial</h2>
@@ -44,7 +44,7 @@ export default function RulesPage() {
             <li>Ingresar al sitio web de la Promocion y registrarse completando el formulario con sus datos personales.</li>
             <li>Cargar la fotografia de la factura de compra y, opcionalmente, la fotografia de los productos adquiridos.</li>
             <li>Cada producto participante adquirido genera un (1) cupon para el sorteo mensual correspondiente.</li>
-            <li>Todos los cupones generados durante el ano participan automaticamente en el sorteo final del automovil.</li>
+            <li>Todos los cupones generados durante la promocion participan automaticamente en el sorteo final del automovil en octubre.</li>
           </ol>
 
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">6. Marcas participantes</h2>
@@ -58,19 +58,15 @@ export default function RulesPage() {
           </p>
 
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">8. Premios</h2>
-          <p className="text-gray-600 leading-relaxed mb-2">Los premios mensuales seran los siguientes:</p>
+          <p className="text-gray-600 leading-relaxed mb-2">Los premios mensuales seran los siguientes (30 premios en total):</p>
           <ul className="list-disc list-inside text-gray-600 space-y-1 mb-4">
-            <li>Febrero: Licuadora Personal</li>
-            <li>Marzo: Air Fryer</li>
-            <li>Abril: Patinete Electrico</li>
-            <li>Mayo: Licuadora Oster</li>
-            <li>Junio: Robo Aspirador</li>
-            <li>Julio: Smart TV 55"</li>
-            <li>Agosto: iPhone 16</li>
-            <li>Septiembre: Scooter Electrico</li>
-            <li>Octubre: Air Fryer</li>
-            <li>Noviembre: Moto 0 KM</li>
-            <li>Diciembre (Gran Sorteo Final): Renault Kwid 0 KM</li>
+            <li>Abril (4 premios): TV 50", Licuadora XION 600ml, Licuadora XION 380ml, Cupon Compra 500.000Gs</li>
+            <li>Mayo (5 premios): TV 50", Air Fryer XION 5L, Licuadora XION 600ml, Licuadora XION 380ml, Cupon Compra 500.000Gs</li>
+            <li>Junio (5 premios): TV 50", Aspiradora Robot XION, Licuadora XION 600ml, Licuadora XION 380ml, Cupon Compra 500.000Gs</li>
+            <li>Julio (5 premios): Motoneta Kenton Viva 110, Air Fryer XION 5L, Licuadora XION 600ml, 2x Cupon Compra 500.000Gs</li>
+            <li>Agosto (5 premios): iPhone 16 128GB, Air Fryer XION 5L, Scooter Electrico HYE, Patineta Electrica, Cupon Compra 500.000Gs</li>
+            <li>Septiembre (5 premios): Motoneta Kenton Viva 110, iPhone 16 128GB, Aspiradora Robot XION, Licuadora XION 380ml, Cupon Compra 500.000Gs</li>
+            <li>Octubre (Gran Sorteo Final): Renault Kwid 0 KM</li>
           </ul>
           <p className="text-gray-600 leading-relaxed mb-4">
             Los premios no son canjeables por dinero en efectivo. Las imagenes de los premios son referenciales y pueden variar en color o modelo.

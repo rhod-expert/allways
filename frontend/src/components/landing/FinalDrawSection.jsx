@@ -25,7 +25,7 @@ export default function FinalDrawSection() {
           <h2 className="text-3xl sm:text-5xl font-black text-white uppercase mb-2">
             Renault <span className="text-gold-gradient">Kwid</span> 0 KM
           </h2>
-          <p className="text-gray-400 text-lg">Diciembre 2026</p>
+          <p className="text-gray-400 text-lg">Octubre 2026</p>
         </motion.div>
 
         <motion.div
@@ -52,7 +52,7 @@ export default function FinalDrawSection() {
                 Todos tus cupones del ano participan
               </h3>
               <p className="text-gray-400 mb-6 leading-relaxed">
-                Cada cupon que acumules durante todo el 2026 participa automaticamente en el gran sorteo final de diciembre. Mientras mas compres, mas oportunidades tenes de llevarte un Renault Kwid 0 KM.
+                Cada cupon que acumules durante toda la promocion participa automaticamente en el gran sorteo final de octubre. Mientras mas compres, mas oportunidades tenes de llevarte un Renault Kwid 0 KM.
               </p>
               <Link to="/participar" className="btn-gold inline-flex">
                 PARTICIPAR AHORA

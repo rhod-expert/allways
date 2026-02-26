@@ -2,7 +2,7 @@
 
 Sistema web completo de campanha de sorteio de premios para **San Jose Import Export S.A. + Allways Health** (Paraguay).
 
-Los participantes compran productos Allways, cargan su factura, y reciben cupones para sorteos mensuales con premios que van desde electrodomesticos hasta un **Renault Kwid 0 KM**.
+Los participantes compran productos Allways, cargan su factura, y reciben cupones para sorteos mensuales (abril-septiembre) con **30 premios** que van desde electrodomesticos hasta un **Renault Kwid 0 KM** en el sorteo final de octubre.
 
 ---
 
@@ -545,20 +545,20 @@ pm2 monit
 
 ---
 
-## Premios Mensuales
+## Premios Mensuales (30 premios — Abril a Octubre 2026)
 
-| Mes | Premio | Imagen |
-|-----|--------|--------|
-| Abril | Licuadora Personal XION 600ml | licuadora-personal.png |
-| Abril | Licuadora Personal XION 380ml | licuadora-2.png |
-| Mayo | Freidora Air Fryer XION 5L | air-fryer.png |
-| Junio | Aspiradora Robot XION | robo-aspirador.png |
-| Julio | TV Smart Audisat 50" | tv.png |
-| Agosto | Motoneta Kenton Viva 110 | moto.png |
-| Septiembre | Scooter Electrico HYE HY-SC8.5 | scooter.png |
-| Octubre | iPhone 16 128GB | iphone.png |
-| Noviembre | Renault Kwid 0km | kwid.png |
-| **Diciembre** | **Renault Kwid 0km** (sorteo final) | kwid.png |
+> Vigencia: 1 de marzo a 30 de septiembre de 2026. Sorteo final: octubre 2026.
+> TV 50" se sortea en Abril/Mayo/Junio (antes de la Copa del Mundo, julio 2026).
+
+| Mes | Cant. | Premios |
+|-----|-------|---------|
+| **Abril** | 4 | TV Smart Audisat 50", Licuadora XION 600ml, Licuadora XION 380ml, Cupon de Compra 500.000Gs |
+| **Mayo** | 5 | TV Smart Audisat 50", Air Fryer XION 5L, Licuadora XION 600ml, Licuadora XION 380ml, Cupon de Compra 500.000Gs |
+| **Junio** | 5 | TV Smart Audisat 50", Aspiradora Robot XION, Licuadora XION 600ml, Licuadora XION 380ml, Cupon de Compra 500.000Gs |
+| **Julio** | 5 | Motoneta Kenton Viva 110, Air Fryer XION 5L, Licuadora XION 600ml, 2x Cupon de Compra 500.000Gs |
+| **Agosto** | 5 | iPhone 16 128GB, Air Fryer XION 5L, Scooter Electrico HYE, Patineta Electrica, Cupon de Compra 500.000Gs |
+| **Septiembre** | 5 | Motoneta Kenton Viva 110, iPhone 16 128GB, Aspiradora Robot XION, Licuadora XION 380ml, Cupon de Compra 500.000Gs |
+| **Octubre** | 1 | **Renault Kwid 0km** (sorteo final — todos los cupones acumulados participan) |
 
 ---
 
@@ -627,6 +627,16 @@ pm2 monit
 ---
 
 ## Changelog
+
+### v1.2.0 — 2026-02-26 (Prize Structure Update)
+
+- **CHANGE** Campana ahora va de Abril a Octubre (antes Abril-Diciembre)
+- **CHANGE** Sorteo final Kwid en Octubre (antes Diciembre)
+- **CHANGE** TV 50" se sortea en Abril/Mayo/Junio (antes de Copa del Mundo julio 2026)
+- **NEW** 30 premios mensuales (antes 10): incluye Patineta Electrica, Cupon de Compra 500.000Gs
+- **UPDATE** Base de datos ALLWAYS_PREMIOS con 30 registros
+- **UPDATE** Frontend PrizesSection, FinalDrawSection, RulesPage actualizados
+- **UPDATE** SQL seed 05-seed-prizes.sql reescrito
 
 ### v1.1.0 — 2026-02-25 (Security Hardening)
 
