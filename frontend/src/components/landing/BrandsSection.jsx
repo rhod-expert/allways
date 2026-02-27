@@ -1,4 +1,6 @@
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const products = [
   { id: 1, name: 'Whey Protein Dulce de Leche' },
@@ -29,7 +31,13 @@ const products = [
   { id: 115, name: 'Creatine 150 Cápsulas' },
 ]
 
+const ITEMS_PER_PAGE = 12
+
 export default function BrandsSection() {
+  const [page, setPage] = useState(0)
+  const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE)
+  const currentProducts = products.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE)
+
   return (
     <section className="py-16 bg-allways-gray-light">
       <div className="max-w-6xl mx-auto px-4">
@@ -43,29 +51,76 @@ export default function BrandsSection() {
           <h2 className="text-2xl sm:text-3xl font-black text-allways-dark uppercase">
             Productos Participantes
           </h2>
+          <p className="text-gray-500 text-sm mt-2">{products.length} productos en la promocion</p>
         </motion.div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
-          {products.map((product, index) => (
+        {/* Paginated product grid */}
+        <div className="min-h-[420px]">
+          <AnimatePresence mode="wait">
             <motion.div
-              key={product.id}
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.03 }}
-              className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow p-3 flex flex-col items-center"
+              key={page}
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.25 }}
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5"
             >
-              <img
-                src={`${import.meta.env.BASE_URL}images/productos/${product.id}.png`}
-                alt={product.name}
-                className="w-full h-auto object-contain rounded-lg"
-                loading="lazy"
-              />
-              <p className="mt-2 text-xs sm:text-sm text-center font-medium text-allways-dark leading-tight">
-                {product.name}
-              </p>
+              {currentProducts.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.04 }}
+                  className="bg-white rounded-xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 p-3 flex flex-col items-center group"
+                >
+                  <div className="overflow-hidden rounded-lg">
+                    <img
+                      src={`${import.meta.env.BASE_URL}images/productos/${product.id}.png`}
+                      alt={product.name}
+                      className="w-full h-auto object-contain rounded-lg group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                  </div>
+                  <p className="mt-2 text-xs sm:text-sm text-center font-medium text-allways-dark leading-tight">
+                    {product.name}
+                  </p>
+                </motion.div>
+              ))}
             </motion.div>
-          ))}
+          </AnimatePresence>
+        </div>
+
+        {/* Pagination controls */}
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="p-2 rounded-full border border-gray-300 text-gray-500 hover:border-allways-gold hover:text-allways-gold disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          <div className="flex gap-2">
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i)}
+                className={`h-2.5 rounded-full transition-all duration-300 ${
+                  page === i
+                    ? 'bg-allways-gold w-8'
+                    : 'bg-gray-300 hover:bg-gray-400 w-2.5'
+                }`}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page === totalPages - 1}
+            className="p-2 rounded-full border border-gray-300 text-gray-500 hover:border-allways-gold hover:text-allways-gold disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronRight size={20} />
+          </button>
         </div>
       </div>
     </section>

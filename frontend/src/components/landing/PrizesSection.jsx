@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const monthlyPrizes = [
   {
@@ -62,14 +63,16 @@ const monthlyPrizes = [
 ]
 
 export default function PrizesSection() {
+  const [activeMonth, setActiveMonth] = useState(0)
+
   return (
-    <section className="py-20 bg-dark-section" id="premios">
+    <section className="py-20 bg-dark-section section-divider-wave section-divider-wave-dark" id="premios">
       <div className="max-w-6xl mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
           <p className="text-allways-gold text-sm font-bold uppercase tracking-[0.2em] mb-2">Sorteos mensuales</p>
           <h2 className="text-3xl sm:text-4xl font-black text-white uppercase">
@@ -80,42 +83,56 @@ export default function PrizesSection() {
           </p>
         </motion.div>
 
-        <div className="space-y-10">
-          {monthlyPrizes.map((monthData, monthIndex) => (
-            <motion.div
+        {/* Month tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-10"
+        >
+          {monthlyPrizes.map((monthData, index) => (
+            <button
               key={monthData.month}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: monthIndex * 0.1 }}
+              onClick={() => setActiveMonth(index)}
+              className={`prize-tab ${activeMonth === index ? 'prize-tab-active' : ''}`}
             >
-              <h3 className="text-allways-gold font-bold text-lg uppercase tracking-wider mb-4 text-center sm:text-left">
-                {monthData.month}
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
-                {monthData.prizes.map((item, index) => (
-                  <motion.div
-                    key={`${monthData.month}-${index}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.06 }}
-                    className="glass-card text-center group cursor-default"
-                  >
-                    <div className="w-full aspect-square flex items-center justify-center p-2 my-3">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="max-h-full max-w-full object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    </div>
-                    <h4 className="text-white font-bold text-sm sm:text-base">{item.name}</h4>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+              {monthData.month}
+            </button>
           ))}
+        </motion.div>
+
+        {/* Prize cards with animated transitions */}
+        <div className="min-h-[320px]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeMonth}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
+            >
+              {monthlyPrizes[activeMonth].prizes.map((item, index) => (
+                <motion.div
+                  key={`${monthlyPrizes[activeMonth].month}-${index}`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.08 }}
+                  className="glass-card-gold text-center group cursor-default"
+                >
+                  <div className="w-full aspect-square flex items-center justify-center p-2 my-3">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="max-h-full max-w-full object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                  </div>
+                  <h4 className="text-white font-bold text-sm sm:text-base">{item.name}</h4>
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </section>

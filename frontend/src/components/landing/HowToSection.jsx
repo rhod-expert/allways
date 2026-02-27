@@ -24,7 +24,7 @@ const steps = [
 
 export default function HowToSection() {
   return (
-    <section className="py-20 bg-white" id="como-participar">
+    <section className="py-20 bg-white section-divider-wave section-divider-wave-dark" id="como-participar">
       <div className="max-w-6xl mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -38,9 +38,10 @@ export default function HowToSection() {
           </h2>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
           {steps.map((step, index) => {
             const Icon = step.icon
+            const isLast = index === steps.length - 1
             return (
               <motion.div
                 key={step.number}
@@ -48,12 +49,18 @@ export default function HowToSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.2 }}
-                className="glass-card-light text-center group"
+                className={`glass-card-light text-center group relative ${!isLast ? 'step-connector' : ''}`}
               >
-                <div className="mb-5 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-allways-gold to-allways-gold-light shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Icon size={28} className="text-allways-dark" />
+                {/* Floating number badge */}
+                <div className="absolute -top-5 left-1/2 -translate-x-1/2">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-allways-gold to-allways-gold-light flex items-center justify-center shadow-gold">
+                    <span className="text-allways-dark font-black text-lg">{step.number}</span>
+                  </div>
                 </div>
-                <div className="text-xs font-bold text-allways-gold tracking-widest mb-2">{step.number}</div>
+
+                <div className="pt-6 mb-5 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-allways-dark to-allways-navy shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Icon size={28} className="text-allways-gold" />
+                </div>
                 <h3 className="text-xl font-black text-allways-dark uppercase mb-3">{step.title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{step.description}</p>
               </motion.div>

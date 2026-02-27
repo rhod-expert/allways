@@ -239,3 +239,169 @@
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(77, 184, 255, 0.1));
   @apply text-white border-l-2 border-allways-cyan;
 }
+
+/* ===== SECTION WAVE DIVIDERS ===== */
+.section-divider-wave {
+  position: relative;
+}
+
+.section-divider-wave::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 1200 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,30 C200,60 400,0 600,30 C800,60 1000,0 1200,30 L1200,60 L0,60 Z' fill='%23ffffff'/%3E%3C/svg%3E") no-repeat bottom center;
+  background-size: 100% 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.section-divider-wave-dark::after {
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 1200 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,30 C200,60 400,0 600,30 C800,60 1000,0 1200,30 L1200,60 L0,60 Z' fill='%230A1628'/%3E%3C/svg%3E") no-repeat bottom center;
+  background-size: 100% 100%;
+}
+
+.section-divider-wave-gray::after {
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 1200 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,30 C200,60 400,0 600,30 C800,60 1000,0 1200,30 L1200,60 L0,60 Z' fill='%23E8EDF2'/%3E%3C/svg%3E") no-repeat bottom center;
+  background-size: 100% 100%;
+}
+
+/* ===== DOT GRID PATTERN OVERLAY ===== */
+.bg-dot-pattern {
+  background-image: radial-gradient(circle, rgba(212, 168, 67, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ===== ENHANCED GLASS CARD GOLD VARIANT ===== */
+.glass-card-gold {
+  @apply rounded-2xl p-6;
+  background: rgba(212, 168, 67, 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 168, 67, 0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-gold:hover {
+  background: rgba(212, 168, 67, 0.12);
+  border-color: rgba(212, 168, 67, 0.4);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 30px rgba(212, 168, 67, 0.15);
+}
+
+/* ===== TEXT GLOW EFFECT ===== */
+.text-glow-gold {
+  text-shadow: 0 0 20px rgba(212, 168, 67, 0.4), 0 0 40px rgba(212, 168, 67, 0.2);
+}
+
+/* ===== GRADIENT BORDER BOTTOM (for Header) ===== */
+.border-gradient-gold {
+  border-image: linear-gradient(90deg, transparent, rgba(212, 168, 67, 0.5), transparent) 1;
+}
+
+/* ===== ANIMATED UNDERLINE FOR NAV ===== */
+.nav-link-animated {
+  position: relative;
+}
+
+.nav-link-animated::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #D4A843, #F0D78C);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+  border-radius: 1px;
+}
+
+.nav-link-animated:hover::after {
+  width: 80%;
+}
+
+/* ===== CONNECTING LINE FOR STEPS ===== */
+.step-connector {
+  position: relative;
+}
+
+.step-connector::after {
+  content: '';
+  position: absolute;
+  top: 2rem;
+  right: -2rem;
+  width: 4rem;
+  height: 2px;
+  background: linear-gradient(90deg, #D4A843, transparent);
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .step-connector::after {
+    display: none;
+  }
+}
+
+/* ===== SPOTLIGHT / STAGE EFFECT ===== */
+.spotlight-bg {
+  background:
+    radial-gradient(ellipse 300px 400px at 30% 50%, rgba(212, 168, 67, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 300px 400px at 70% 50%, rgba(212, 168, 67, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 600px 300px at 50% 0%, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
+}
+
+/* ===== PRIZE TAB STYLES ===== */
+.prize-tab {
+  @apply px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 cursor-pointer;
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.prize-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(212, 168, 67, 0.3);
+}
+
+.prize-tab-active {
+  background: linear-gradient(135deg, #D4A843, #F0D78C);
+  color: #0A1628;
+  border-color: transparent;
+  box-shadow: 0 0 20px rgba(212, 168, 67, 0.3);
+}
+
+/* ===== CONFETTI PARTICLE ===== */
+.confetti-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  opacity: 0;
+  animation: confettiFall linear infinite;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0) rotate(45deg) scale(1);
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(30vh) rotate(720deg) scale(0.3);
+    opacity: 0;
+  }
+}
+
+/* ===== ANNOUNCEMENT BAR ===== */
+.announcement-bar {
+  background: linear-gradient(90deg, #D4A843 0%, #F0D78C 50%, #D4A843 100%);
+  background-size: 200% 100%;
+  animation: goldShimmer 4s ease-in-out infinite;
+}

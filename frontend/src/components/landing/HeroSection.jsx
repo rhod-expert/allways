@@ -5,8 +5,11 @@ import GoldParticles from './GoldParticles'
 
 export default function HeroSection() {
   return (
-    <section className="relative bg-hero min-h-[90vh] flex items-center justify-center">
+    <section className="relative bg-hero min-h-[90vh] flex items-center justify-center section-divider-wave">
       <GoldParticles />
+
+      {/* Dot pattern texture overlay */}
+      <div className="absolute inset-0 bg-dot-pattern z-[1] opacity-50" />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 text-center py-20">
         <motion.div
@@ -25,15 +28,23 @@ export default function HeroSection() {
           </p>
         </motion.div>
 
+        {/* Decorative gold line */}
+        <motion.div
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 1, delay: 0.3 }}
+          className="w-24 h-0.5 mx-auto mb-8 bg-gradient-to-r from-transparent via-allways-gold to-transparent"
+        />
+
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-4xl sm:text-5xl md:text-7xl font-black text-white uppercase leading-tight mb-6"
+          className="text-5xl sm:text-6xl md:text-8xl font-black text-white uppercase leading-[0.9] mb-8 text-glow-gold"
         >
           COMPRA. CARGA{' '}
           <span className="text-gold-gradient italic">TU FACTURA</span>.{' '}
-          <span className="block">GANA.</span>
+          <span className="block mt-2">GANA.</span>
         </motion.h1>
 
         <motion.p
@@ -65,7 +76,7 @@ export default function HeroSection() {
           </Link>
           <Link
             to="/mis-cupones"
-            className="border-2 border-allways-gold/50 text-allways-gold hover:bg-allways-gold/10 font-bold px-8 py-4 rounded-xl transition-all duration-300 text-lg"
+            className="border-2 border-allways-gold/50 text-allways-gold hover:bg-allways-gold/10 hover:shadow-gold font-bold px-8 py-4 rounded-xl transition-all duration-300 text-lg"
           >
             MIS CUPONES
           </Link>
@@ -77,7 +88,7 @@ export default function HeroSection() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
+        className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10"
       >
         <motion.div
           animate={{ y: [0, 8, 0] }}
