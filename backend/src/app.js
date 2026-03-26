@@ -16,7 +16,17 @@ const app = express();
 
 // ---- Security headers ----
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  frameguard: false,
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      'frame-ancestors': ["'self'", 'https://www.sanjosesa.com.py', 'https://sanjosesa.com.py'],
+      'script-src': ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
+      'frame-src': ["'self'", 'https://www.google.com'],
+      'connect-src': ["'self'", 'https://www.google.com']
+    }
+  }
 }));
 
 // ---- CORS ----

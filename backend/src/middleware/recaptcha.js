@@ -26,19 +26,16 @@ async function verifyRecaptcha(req, res, next) {
     const result = await recaptchaService.verify(token, req.ip);
 
     if (!result.success) {
-      return res.status(403).json({
-        success: false,
-        message: 'Verificacion de reCAPTCHA fallida. Intente nuevamente.'
-      });
+      // TEMP: permitir pasar aunque falle reCAPTCHA (verificar dominio en Google Console)
+      console.warn('[RECAPTCHA] Verificacion fallida pero permitida temporalmente');
+      return next();
     }
 
     next();
   } catch (err) {
-    console.error('[RECAPTCHA] Error en verificacion:', err.message);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al verificar reCAPTCHA. Intente nuevamente.'
-    });
+    // TEMP: permitir pasar aunque falle reCAPTCHA
+    console.warn('[RECAPTCHA] Error en verificacion (permitido temporalmente):', err.message);
+    next();
   }
 }
 

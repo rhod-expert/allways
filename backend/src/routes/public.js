@@ -42,4 +42,12 @@ router.post(
  */
 router.get('/premios', couponController.listPremios);
 
+const geoController = require('../controllers/geoController');
+
+// Geographic reference data (public, no auth)
+router.get('/geo/departamentos', geoController.getDepartamentos);
+router.get('/geo/departamentos/:departamentoId/distritos', geoController.getDistritos);
+router.get('/geo/departamentos/:departamentoId/distritos/:distritoId/ciudades', geoController.getCiudades);
+router.get('/geo/departamentos/:departamentoId/distritos/:distritoId/ciudades/:ciudadId/barrios', geoController.getBarrios);
+
 module.exports = router;

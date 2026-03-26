@@ -123,20 +123,20 @@ export default function AdminLayout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="bg-white shadow-sm border-b border-gray-200 h-16 flex items-center px-4 lg:px-8">
+        <header className="bg-white shadow-sm border-b border-gray-200 h-14 sm:h-16 flex items-center px-3 sm:px-4 lg:px-8">
           <button
-            className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-700"
+            className="lg:hidden p-2 -ml-1 text-gray-500 hover:text-gray-700 active:bg-gray-100 rounded-lg transition-colors"
             onClick={() => setSidebarOpen(true)}
           >
-            <Menu size={24} />
+            <Menu size={22} />
           </button>
-          <div className="ml-2 lg:ml-0">
-            <h1 className="text-lg font-bold text-gray-800">Allways Show de Premios</h1>
+          <div className="ml-1 sm:ml-2 lg:ml-0 min-w-0">
+            <h1 className="text-sm sm:text-lg font-bold text-gray-800 truncate">Allways Show de Premios</h1>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 lg:p-8 overflow-auto">
+        <main className="flex-1 p-3 sm:p-4 lg:p-8 overflow-auto">
           <Outlet />
         </main>
       </div>

@@ -67,6 +67,8 @@ async function register(data, files) {
   const {
     nombre, cedula, telefono, email,
     departamento, ciudad,
+    departamentoId, distritoId, ciudadId, barrioId,
+    calle, numeroCasa, complemento,
     numeroFactura, cantidadProductos
   } = data;
 
@@ -120,6 +122,13 @@ async function register(data, files) {
           email: (email || '').trim() || null,
           departamento: stripHtml(departamento || '') || null,
           ciudad: stripHtml(ciudad || '') || null,
+          departamentoId: departamentoId ? parseInt(departamentoId, 10) : null,
+          distritoId: distritoId ? parseInt(distritoId, 10) : null,
+          ciudadId: ciudadId ? parseInt(ciudadId, 10) : null,
+          barrioId: barrioId ? parseInt(barrioId, 10) : null,
+          calle: stripHtml(calle || '') || null,
+          numeroCasa: stripHtml(numeroCasa || '') || null,
+          complemento: stripHtml(complemento || '') || null,
           id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
         },
         { autoCommit: false }

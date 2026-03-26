@@ -16,16 +16,17 @@ export default function StatsCard({ title, value, icon: Icon, color = 'blue', tr
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl shadow-md p-5 border border-gray-100 flex items-center gap-4"
+      className="bg-white rounded-2xl shadow-md p-3 sm:p-5 border border-gray-100 flex items-center gap-3 sm:gap-4"
     >
-      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${bgGradient} flex items-center justify-center flex-shrink-0 shadow-lg`}>
-        <Icon size={22} className="text-white" />
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${bgGradient} flex items-center justify-center flex-shrink-0 shadow-lg`}>
+        <Icon size={18} className="text-white sm:hidden" />
+        <Icon size={22} className="text-white hidden sm:block" />
       </div>
       <div className="min-w-0">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider truncate">{title}</p>
-        <p className="text-2xl font-black text-gray-800">{value}</p>
+        <p className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider truncate">{title}</p>
+        <p className="text-xl sm:text-2xl font-black text-gray-800">{value}</p>
         {trend && (
-          <p className={`text-xs font-medium ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
+          <p className={`text-[10px] sm:text-xs font-medium ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
             {trend > 0 ? '+' : ''}{trend}% vs semana anterior
           </p>
         )}

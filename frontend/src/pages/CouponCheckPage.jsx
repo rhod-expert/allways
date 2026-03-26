@@ -6,6 +6,7 @@ import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import useApi from '../hooks/useApi'
+import useRecaptcha from '../hooks/useRecaptcha'
 import { validateCedula } from '../utils/validators'
 import GoldParticles from '../components/landing/GoldParticles'
 
@@ -15,6 +16,7 @@ export default function CouponCheckPage() {
   const [coupons, setCoupons] = useState(null)
   const [searched, setSearched] = useState(false)
   const { loading, post } = useApi()
+  const { getToken } = useRecaptcha()
 
   const handleSearch = async (e) => {
     e.preventDefault()
@@ -27,7 +29,8 @@ export default function CouponCheckPage() {
 
     try {
       const cleanCedula = cedula.replace(/\./g, '').trim()
-      const result = await post('/cupones/consulta', { cedula: cleanCedula, recaptchaToken: 'v3_placeholder_token' })
+      const recaptchaToken = await getToken('consulta')
+      const result = await post('/cupones/consulta', { cedula: cleanCedula, recaptchaToken })
       setCoupons(result.data?.cupones || [])
       setSearched(true)
     } catch (error) {

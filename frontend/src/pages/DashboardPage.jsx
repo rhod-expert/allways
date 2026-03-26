@@ -93,14 +93,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h2 className="text-2xl font-black text-gray-800">Dashboard</h2>
-        <p className="text-gray-500 text-sm">Resumen general de la promocion</p>
+        <h2 className="text-xl sm:text-2xl font-black text-gray-800">Dashboard</h2>
+        <p className="text-gray-500 text-xs sm:text-sm">Resumen general de la promocion</p>
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <StatsCard title="Total participantes" value={stats.totalParticipantes} icon={Users} color="blue" />
         <StatsCard title="Registros hoy" value={stats.registrosHoy} icon={UserPlus} color="green" />
         <StatsCard title="Registros esta semana" value={stats.registrosSemana} icon={Calendar} color="cyan" />

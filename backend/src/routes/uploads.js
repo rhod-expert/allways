@@ -15,7 +15,15 @@ const ALLOWED_TYPES = ['facturas', 'productos'];
  * Serve uploaded images.
  * Admin authentication required for facturas and productos.
  */
-router.get('/:type/:filename', verifyToken, (req, res) => {
+// Middleware to accept token from query param (for <img> tags)
+function injectTokenFromQuery(req, res, next) {
+  if (!req.headers.authorization && req.query.token) {
+    req.headers.authorization = `Bearer ${req.query.token}`;
+  }
+  next();
+}
+
+router.get('/:type/:filename', injectTokenFromQuery, verifyToken, (req, res) => {
   const { type, filename } = req.params;
 
   // Validate type

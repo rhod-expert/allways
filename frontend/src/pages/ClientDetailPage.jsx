@@ -97,74 +97,83 @@ export default function ClientDetailPage() {
   if (!registration) return null
 
   const imageBase = '/allways/api'
+  const token = localStorage.getItem('allways_token')
+  const authQuery = token ? `?token=${token}` : ''
+
+  const facturaUrl = registration.IMAGEN_FACTURA
+    ? `${imageBase}/uploads/facturas/${registration.IMAGEN_FACTURA}${authQuery}`
+    : null
+  const productosUrl = registration.IMAGEN_PRODUCTOS
+    ? `${imageBase}/uploads/productos/${registration.IMAGEN_PRODUCTOS}${authQuery}`
+    : null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link
             to="/admin/registros"
-            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors flex-shrink-0"
           >
             <ArrowLeft size={18} className="text-gray-500" />
           </Link>
-          <div>
-            <h2 className="text-2xl font-black text-gray-800">Registro #{registration.ID}</h2>
-            <p className="text-gray-500 text-sm">Detalle del registro de factura</p>
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-2xl font-black text-gray-800 truncate">Registro #{registration.ID}</h2>
+            <p className="text-gray-500 text-xs sm:text-sm hidden sm:block">Detalle del registro de factura</p>
           </div>
         </div>
-        <Badge status={registration.ESTADO || 'PENDIENTE'} className="text-sm !px-4 !py-1.5" />
+        <Badge status={registration.ESTADO || 'PENDIENTE'} className="text-xs sm:text-sm !px-3 sm:!px-4 !py-1 sm:!py-1.5 flex-shrink-0" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column: data */}
-        <div className="lg:col-span-1 space-y-6">
+      {/* Mobile: action buttons sticky at top */}
+      {registration.ESTADO === 'PENDIENTE' && (
+        <div className="lg:hidden bg-white rounded-2xl shadow-md p-4 border border-gray-100 sticky top-0 z-10">
+          <div className="flex gap-3">
+            <Button
+              variant="green"
+              onClick={handleAccept}
+              loading={actionLoading}
+              className="flex-1 !py-3"
+            >
+              <CheckCircle size={18} />
+              ACEPTAR
+            </Button>
+            <Button
+              variant="red"
+              onClick={() => setRejectModalOpen(true)}
+              disabled={actionLoading}
+              className="flex-1 !py-3"
+            >
+              <XCircle size={18} />
+              RECHAZAR
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Main grid: on mobile show images first, then data */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Left column: data - shown second on mobile, first on desktop */}
+        <div className="lg:col-span-1 space-y-4 sm:space-y-6 order-2 lg:order-1">
           {/* Participant data */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
+            className="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100"
           >
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Datos del Participante</h3>
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 sm:mb-4">Datos del Participante</h3>
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <User size={16} className="text-gray-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-400">Nombre</p>
-                  <p className="font-semibold text-gray-800">{registration.NOMBRE}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <FileText size={16} className="text-gray-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-400">Cedula</p>
-                  <p className="font-mono font-semibold text-gray-800">{registration.CEDULA}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone size={16} className="text-gray-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-400">Telefono</p>
-                  <p className="font-semibold text-gray-800">{registration.TELEFONO}</p>
-                </div>
-              </div>
+              <InfoRow icon={User} label="Nombre" value={registration.NOMBRE} />
+              <InfoRow icon={FileText} label="Cedula" value={registration.CEDULA} mono />
+              <InfoRow icon={Phone} label="Telefono" value={registration.TELEFONO} />
               {registration.EMAIL && (
-                <div className="flex items-center gap-3">
-                  <Mail size={16} className="text-gray-400 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs text-gray-400">Email</p>
-                    <p className="text-sm text-gray-800">{registration.EMAIL}</p>
-                  </div>
-                </div>
+                <InfoRow icon={Mail} label="Email" value={registration.EMAIL} small />
               )}
-              <div className="flex items-center gap-3">
-                <MapPin size={16} className="text-gray-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-400">Ubicacion</p>
-                  <p className="text-sm text-gray-800">{registration.CIUDAD}, {registration.DEPARTAMENTO}</p>
-                </div>
-              </div>
+              <InfoRow icon={MapPin} label="Ubicacion" value={buildLocationString(registration)} small />
+              {(registration.CALLE || registration.NUMERO_CASA) && (
+                <InfoRow icon={MapPin} label="Direccion" value={buildAddressString(registration)} small />
+              )}
             </div>
           </motion.div>
 
@@ -173,35 +182,26 @@ export default function ClientDetailPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
+            className="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100"
           >
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Datos de la Factura</h3>
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 sm:mb-4">Datos de la Factura</h3>
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <FileText size={16} className="text-gray-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-400">Numero de factura</p>
-                  <p className="font-mono font-semibold text-gray-800">{registration.NUMERO_FACTURA}</p>
-                </div>
-              </div>
+              <InfoRow icon={FileText} label="Numero de factura" value={registration.NUMERO_FACTURA} mono />
               <div className="flex items-center gap-3">
                 <Package size={16} className="text-gray-400 flex-shrink-0" />
                 <div>
                   <p className="text-xs text-gray-400">Cantidad de productos</p>
-                  <p className="font-bold text-2xl text-allways-blue">{registration.CANTIDAD_PRODUCTOS}</p>
+                  <p className="font-bold text-xl sm:text-2xl text-allways-blue">{registration.CANTIDAD_PRODUCTOS}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Calendar size={16} className="text-gray-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-400">Fecha de registro</p>
-                  <p className="text-sm text-gray-800">
-                    {registration.FECHA_REGISTRO
-                      ? new Date(registration.FECHA_REGISTRO).toLocaleString('es-PY')
-                      : '-'}
-                  </p>
-                </div>
-              </div>
+              <InfoRow
+                icon={Calendar}
+                label="Fecha de registro"
+                value={registration.FECHA_REGISTRO
+                  ? new Date(registration.FECHA_REGISTRO).toLocaleString('es-PY')
+                  : '-'}
+                small
+              />
               {registration.MOTIVO_RECHAZO && (
                 <div className="mt-3 p-3 bg-red-50 rounded-xl border border-red-200">
                   <p className="text-xs text-red-400 font-semibold mb-1">Motivo de rechazo:</p>
@@ -211,13 +211,13 @@ export default function ClientDetailPage() {
             </div>
           </motion.div>
 
-          {/* Action buttons */}
+          {/* Desktop: action buttons */}
           {registration.ESTADO === 'PENDIENTE' && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
+              className="hidden lg:block bg-white rounded-2xl shadow-md p-6 border border-gray-100"
             >
               <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Acciones</h3>
               <div className="flex gap-3">
@@ -244,32 +244,37 @@ export default function ClientDetailPage() {
           )}
         </div>
 
-        {/* Right column: images */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* Right column: images - shown first on mobile */}
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-1 lg:order-2">
           {/* Invoice image */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
+            className="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100"
           >
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Foto de la Factura</h3>
-            {registration.IMAGEN_FACTURA ? (
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 sm:mb-4">Foto de la Factura</h3>
+            {facturaUrl ? (
               <div
                 className="relative group cursor-pointer rounded-xl overflow-hidden bg-gray-100"
-                onClick={() => setZoomImage(`${imageBase}/uploads/facturas/${registration.IMAGEN_FACTURA}`)}
+                onClick={() => setZoomImage(facturaUrl)}
               >
                 <img
-                  src={`${imageBase}/uploads/facturas/${registration.IMAGEN_FACTURA}`}
+                  src={facturaUrl}
                   alt="Factura"
-                  className="w-full max-h-[500px] object-contain"
+                  className="w-full max-h-[300px] sm:max-h-[500px] object-contain"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                   <ZoomIn size={32} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
+                {/* Mobile tap hint */}
+                <div className="absolute bottom-2 right-2 lg:hidden bg-black/60 text-white text-xs px-2 py-1 rounded-lg flex items-center gap-1">
+                  <ZoomIn size={12} />
+                  Tocar para ampliar
+                </div>
               </div>
             ) : (
-              <div className="h-48 bg-gray-100 rounded-xl flex items-center justify-center">
+              <div className="h-32 sm:h-48 bg-gray-100 rounded-xl flex items-center justify-center">
                 <p className="text-gray-400">Sin imagen</p>
               </div>
             )}
@@ -280,26 +285,30 @@ export default function ClientDetailPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
+            className="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100"
           >
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Foto de los Productos</h3>
-            {registration.IMAGEN_PRODUCTOS ? (
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 sm:mb-4">Foto de los Productos</h3>
+            {productosUrl ? (
               <div
                 className="relative group cursor-pointer rounded-xl overflow-hidden bg-gray-100"
-                onClick={() => setZoomImage(`${imageBase}/uploads/productos/${registration.IMAGEN_PRODUCTOS}`)}
+                onClick={() => setZoomImage(productosUrl)}
               >
                 <img
-                  src={`${imageBase}/uploads/productos/${registration.IMAGEN_PRODUCTOS}`}
+                  src={productosUrl}
                   alt="Productos"
-                  className="w-full max-h-[500px] object-contain"
+                  className="w-full max-h-[300px] sm:max-h-[500px] object-contain"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                   <ZoomIn size={32} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
+                <div className="absolute bottom-2 right-2 lg:hidden bg-black/60 text-white text-xs px-2 py-1 rounded-lg flex items-center gap-1">
+                  <ZoomIn size={12} />
+                  Tocar para ampliar
+                </div>
               </div>
             ) : (
-              <div className="h-32 bg-gray-100 rounded-xl flex items-center justify-center">
+              <div className="h-24 sm:h-32 bg-gray-100 rounded-xl flex items-center justify-center">
                 <p className="text-gray-400">No se adjunto foto de productos</p>
               </div>
             )}
@@ -311,13 +320,13 @@ export default function ClientDetailPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
+              className="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100"
             >
               <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
                 Otros registros del participante
               </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <table className="w-full text-sm min-w-[400px]">
                   <thead>
                     <tr className="border-b border-gray-100">
                       <th className="text-left py-2 px-3 text-xs font-semibold text-gray-400 uppercase">ID</th>
@@ -397,25 +406,66 @@ export default function ClientDetailPage() {
         </div>
       </Modal>
 
-      {/* Zoom image modal */}
+      {/* Zoom image modal - touch-friendly fullscreen */}
       {zoomImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer"
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center cursor-pointer touch-manipulation"
           onClick={() => setZoomImage(null)}
         >
           <button
-            className="absolute top-4 right-4 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+            className="absolute top-4 right-4 z-10 p-3 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
             onClick={() => setZoomImage(null)}
           >
             <X size={24} className="text-white" />
           </button>
-          <img
-            src={zoomImage}
-            alt="Imagen ampliada"
-            className="max-w-full max-h-[90vh] object-contain rounded-lg"
-          />
+          <div className="w-full h-full flex items-center justify-center p-2 sm:p-4 overflow-auto">
+            <img
+              src={zoomImage}
+              alt="Imagen ampliada"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg select-none"
+              onClick={(e) => e.stopPropagation()}
+              style={{ touchAction: 'pinch-zoom' }}
+            />
+          </div>
+          <p className="absolute bottom-4 left-0 right-0 text-center text-white/50 text-xs lg:hidden">
+            Pellizcar para hacer zoom - Tocar fuera para cerrar
+          </p>
         </div>
       )}
+    </div>
+  )
+}
+
+function buildAddressString(reg) {
+  const parts = []
+  if (reg.CALLE) parts.push(reg.CALLE)
+  if (reg.NUMERO_CASA) parts.push('N° ' + reg.NUMERO_CASA)
+  if (reg.COMPLEMENTO) parts.push('(' + reg.COMPLEMENTO + ')')
+  return parts.join(' ') || '-'
+}
+
+function buildLocationString(reg) {
+  // Prefer geo-resolved names, fallback to text fields
+  const parts = []
+  if (reg.GEO_BARRIO) parts.push(reg.GEO_BARRIO)
+  if (reg.GEO_CIUDAD) parts.push(reg.GEO_CIUDAD)
+  else if (reg.CIUDAD) parts.push(reg.CIUDAD)
+  if (reg.GEO_DISTRITO) parts.push(reg.GEO_DISTRITO)
+  if (reg.GEO_DEPARTAMENTO) parts.push(reg.GEO_DEPARTAMENTO)
+  else if (reg.DEPARTAMENTO) parts.push(reg.DEPARTAMENTO)
+  return parts.join(', ') || '-'
+}
+
+function InfoRow({ icon: Icon, label, value, mono, small }) {
+  return (
+    <div className="flex items-center gap-3">
+      <Icon size={16} className="text-gray-400 flex-shrink-0" />
+      <div className="min-w-0">
+        <p className="text-xs text-gray-400">{label}</p>
+        <p className={`text-gray-800 truncate ${mono ? 'font-mono font-semibold' : small ? 'text-sm' : 'font-semibold'}`}>
+          {value}
+        </p>
+      </div>
     </div>
   )
 }

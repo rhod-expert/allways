@@ -2,9 +2,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 export default function BarChartCard({ title, data, dataKey = 'value', xKey = 'month' }) {
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-      <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">{title}</h3>
-      <div className="h-64">
+    <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100">
+      <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3 sm:mb-4">{title}</h3>
+      <div className="h-48 sm:h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
