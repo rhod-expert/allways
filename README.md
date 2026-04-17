@@ -2,7 +2,7 @@
 
 Sistema web completo de campanha de sorteio de premios para **San Jose Import Export S.A. + Allways Health** (Paraguay).
 
-Los participantes compran productos Allways, cargan su factura, y reciben cupones para sorteos mensuales (abril-septiembre) con **30 premios** que van desde electrodomesticos hasta un **Renault Kwid 0 KM** en el sorteo final de octubre.
+Los participantes compran productos Allways, cargan su factura, y reciben cupones para sorteos mensuales (mayo-octubre) con **30 premios** que van desde electrodomesticos hasta un **Fiat Mobi 0 KM** en el sorteo final de noviembre.
 
 ---
 
@@ -545,29 +545,33 @@ pm2 monit
 
 ---
 
-## Premios Mensuales (30 premios — Abril a Octubre 2026)
+## Premios Mensuales (30 premios — Mayo a Noviembre 2026)
 
-> Vigencia: 1 de marzo a 30 de septiembre de 2026. Sorteo final: octubre 2026.
-> TV 50" se sortea en Abril/Mayo/Junio (antes de la Copa del Mundo, julio 2026).
+> Vigencia: 1 de mayo a 30 de noviembre de 2026. Sorteo final: lunes 30 de noviembre de 2026.
+> Los sorteos mensuales se realizan en lunes segun el calendario publicado.
 
-| Mes | Cant. | Premios |
-|-----|-------|---------|
-| **Abril** | 4 | TV Smart Audisat 50", Licuadora XION 600ml, Licuadora XION 380ml, Cupon de Compra 500.000Gs |
-| **Mayo** | 5 | TV Smart Audisat 50", Air Fryer XION 5L, Licuadora XION 600ml, Licuadora XION 380ml, Cupon de Compra 500.000Gs |
-| **Junio** | 5 | TV Smart Audisat 50", Aspiradora Robot XION, Licuadora XION 600ml, Licuadora XION 380ml, Cupon de Compra 500.000Gs |
-| **Julio** | 5 | Motoneta Kenton Viva 110, Air Fryer XION 5L, Licuadora XION 600ml, 2x Cupon de Compra 500.000Gs |
-| **Agosto** | 5 | iPhone 16 128GB, Air Fryer XION 5L, Scooter Electrico HYE, Patineta Electrica, Cupon de Compra 500.000Gs |
-| **Septiembre** | 5 | Motoneta Kenton Viva 110, iPhone 16 128GB, Aspiradora Robot XION, Licuadora XION 380ml, Cupon de Compra 500.000Gs |
-| **Octubre** | 1 | **Renault Kwid 0km** (sorteo final — todos los cupones acumulados participan) |
+| Mes | Fecha | Cant. | Premios |
+|-----|-------|-------|---------|
+| **Mayo** | Lun 25/05 | 4 | TV Smart Audisat 50", Licuadora XION 600ml, Licuadora XION 380ml, Cupon de Compra 500.000Gs |
+| **Junio** | Lun 29/06 | 5 | TV Smart Audisat 50", Air Fryer XION 5L, Licuadora XION 600ml, Licuadora XION 380ml, Cupon de Compra 500.000Gs |
+| **Julio** | Lun 27/07 | 5 | TV Smart Audisat 50", Aspiradora Robot XION, Licuadora XION 600ml, Licuadora XION 380ml, Cupon de Compra 500.000Gs |
+| **Agosto** | Lun 31/08 | 5 | Motoneta Kenton Viva 110, Air Fryer XION 5L, Licuadora XION 600ml, 2x Cupon de Compra 500.000Gs |
+| **Septiembre** | Lun 28/09 | 5 | iPhone 16 128GB, Air Fryer XION 5L, Scooter Electrico HYE, Patineta Electrica, Cupon de Compra 500.000Gs |
+| **Octubre** | Lun 26/10 | 5 | Motoneta Kenton Viva 110, iPhone 16 128GB, Aspiradora Robot XION, Licuadora XION 380ml, Cupon de Compra 500.000Gs |
+| **Noviembre** | Lun 30/11 | 1 | **Fiat Mobi 0km** (sorteo final — todos los cupones acumulados participan) |
 
 ---
 
 ## Credenciales por Defecto
 
-| Componente | Usuario | Password |
-|-----------|---------|----------|
-| Admin Panel | `admin` | `Admin2026!` |
-| Oracle DB | `allways` | `Q1Kpvif9RTs4` |
+| Componente | Usuario | Password | Rol |
+|-----------|---------|----------|-----|
+| Admin Panel | `admin` | `Admin2026!` | ADMIN |
+| Admin Panel | `marketing@sanjosesa.com.py` | `Mkt@2809` | ADMIN (marketing) |
+| Admin Panel | `mkt.redessociales2@sanjosesa.com.py` | `Mkt09@75` | ADMIN (redes sociales) |
+| Oracle DB | `allways` | `Q1Kpvif9RTs4` | — |
+
+> Las cuentas marketing se aprovisionan automaticamente en cada boot del backend via `seedAdmin()` (idempotente: si ya existen, no hace nada).
 
 > **Importante:** Cambiar la contrasena del admin despues del primer login usando `PUT /api/admin/cambiar-password` o desde el panel administrativo. Cambiar las credenciales Oracle en produccion.
 
@@ -627,6 +631,26 @@ pm2 monit
 ---
 
 ## Changelog
+
+### v1.4.0 — 2026-04-16 (Campaign Shift + Marketing Admins)
+
+- **CHANGE** Campana desplazada de Abril-Octubre a **Mayo-Noviembre** (7 sorteos mensuales)
+- **CHANGE** Fechas fijas de sorteo (lunes): 25/05, 29/06, 27/07, 31/08, 28/09, 26/10, 30/11
+- **CHANGE** Premio final: **Fiat Mobi 0km** (reemplaza Renault Kwid); imagen en `/images/prizes/mobi.png`
+- **NEW** Script de migracion `database/06-migration-shift-months.sql` (limpia sorteo, remapea MES_SORTEO, re-seed)
+- **NEW** Dos cuentas administrativas de marketing con email como username (provisionadas en boot)
+- **NEW** Fechas de sorteo visibles en `PrizesSection` y calendario detallado en `RulesPage`
+- **UX** Empty state de `CouponCheckPage` rescrito: "Facturas en Analisis" con orientacion dual (aguardando validacion / no registrado)
+- **UPDATE** `seedAdmin()` ahora garante idempotentemente la existencia de las cuentas de marketing, ademas del admin principal
+
+### v1.3.0 — 2026-04-15 (Admin Sorteos + Participantes)
+
+- **NEW** Sistema de sorteo mensual admin (`/admin/sorteos`): resumen, detalle por mes, ejecutar y resetear
+- **NEW** Seleccion aleatoria de cupon ganador via `DBMS_RANDOM.VALUE` entre cupones elegibles (ACEPTADO + no ganadores)
+- **NEW** Pagina admin Clientes (lista + detalle) con JOINs a tablas geo (departamento/distrito/ciudad/barrio)
+- **NEW** Mapa de Google Maps embebido en detalle de registro (`ClientDetailPage`)
+- **NEW** Co-branding: logo San Jose junto al Allways Health en Header, Footer y Hero
+- **UPDATE** CSP frame-ancestors amplia dominios `allways.com.py` (helmet + nginx)
 
 ### v1.2.0 — 2026-02-26 (Prize Structure Update)
 
