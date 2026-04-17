@@ -245,7 +245,7 @@ async function listParticipantes(req, res, next) {
       binds.searchUpper = `%${search.trim().toUpperCase()}%`;
     }
 
-    listSql += ` GROUP BY P.ID, P.NOMBRE, P.CEDULA, P.TELEFONO, P.EMAIL, P.DEPARTAMENTO, P.CIUDAD, P.FECHA_REGISTRO`;
+    listSql += ` GROUP BY P.ID, P.NOMBRE, P.CEDULA, P.TELEFONO, P.EMAIL, P.DEPARTAMENTO, P.CIUDAD, P.CALLE, P.NUMERO_CASA, P.COMPLEMENTO, GD.NOMBRE, GDI.NOMBRE, GC.NOMBRE, GB.NOMBRE, P.FECHA_REGISTRO`;
     listSql += ` ORDER BY P.FECHA_REGISTRO DESC OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY`;
 
     const countBinds = { ...binds };

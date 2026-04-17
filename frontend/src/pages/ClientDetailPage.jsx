@@ -15,6 +15,8 @@ import {
   XCircle,
   X,
   ZoomIn,
+  Map,
+  Home,
 } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
@@ -176,6 +178,59 @@ export default function ClientDetailPage() {
               )}
             </div>
           </motion.div>
+
+          {/* Location detail + map */}
+          {buildMapsQuery(registration) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                  <Map size={14} /> Ubicacion detallada
+                </h3>
+                <a
+                  href={`https://www.google.com/maps/search/${encodeURIComponent(buildMapsQuery(registration))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-allways-blue hover:underline"
+                >
+                  Abrir en Maps
+                </a>
+              </div>
+              <div className="space-y-2 mb-3 text-xs">
+                {registration.GEO_DEPARTAMENTO && (
+                  <p className="text-gray-600"><span className="text-gray-400">Departamento:</span> {registration.GEO_DEPARTAMENTO}</p>
+                )}
+                {registration.GEO_DISTRITO && (
+                  <p className="text-gray-600"><span className="text-gray-400">Distrito:</span> {registration.GEO_DISTRITO}</p>
+                )}
+                {registration.GEO_CIUDAD && (
+                  <p className="text-gray-600"><span className="text-gray-400">Ciudad:</span> {registration.GEO_CIUDAD}</p>
+                )}
+                {registration.GEO_BARRIO && (
+                  <p className="text-gray-600"><span className="text-gray-400">Barrio:</span> {registration.GEO_BARRIO}</p>
+                )}
+                {(registration.CALLE || registration.NUMERO_CASA) && (
+                  <p className="text-gray-600"><span className="text-gray-400">Direccion:</span> {buildAddressString(registration)}</p>
+                )}
+              </div>
+              <div className="rounded-xl overflow-hidden border border-gray-200">
+                <iframe
+                  src={`https://www.google.com/maps?q=${encodeURIComponent(buildMapsQuery(registration))}&output=embed`}
+                  width="100%"
+                  height="200"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Ubicacion"
+                />
+              </div>
+            </motion.div>
+          )}
 
           {/* Registration data */}
           <motion.div
@@ -434,6 +489,23 @@ export default function ClientDetailPage() {
       )}
     </div>
   )
+}
+
+function buildMapsQuery(reg) {
+  const parts = []
+  if (reg.CALLE) {
+    let addr = reg.CALLE
+    if (reg.NUMERO_CASA) addr += ' ' + reg.NUMERO_CASA
+    parts.push(addr)
+  }
+  if (reg.GEO_BARRIO) parts.push(reg.GEO_BARRIO)
+  if (reg.GEO_CIUDAD) parts.push(reg.GEO_CIUDAD)
+  else if (reg.CIUDAD) parts.push(reg.CIUDAD)
+  if (reg.GEO_DISTRITO) parts.push(reg.GEO_DISTRITO)
+  if (reg.GEO_DEPARTAMENTO) parts.push(reg.GEO_DEPARTAMENTO)
+  else if (reg.DEPARTAMENTO) parts.push(reg.DEPARTAMENTO)
+  parts.push('Paraguay')
+  return parts.length > 1 ? parts.join(', ') : ''
 }
 
 function buildAddressString(reg) {

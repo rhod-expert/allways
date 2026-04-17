@@ -30,10 +30,16 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 group">
+            <Link to="/" className="flex items-center gap-3 group">
               <img
                 src="/allways/images/logo-allways-blanco.png"
                 alt="AllWays Health"
+                className="h-9 w-auto group-hover:brightness-110 transition-all duration-300"
+              />
+              <div className="w-px h-6 bg-white/20" />
+              <img
+                src="/allways/images/logo-sanjose.png"
+                alt="San Jose Import Export S.A."
                 className="h-9 w-auto group-hover:brightness-110 transition-all duration-300"
               />
             </Link>

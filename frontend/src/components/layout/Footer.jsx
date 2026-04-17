@@ -25,10 +25,16 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <div className="mb-4">
+            <div className="mb-4 flex items-center gap-4">
               <img
                 src="/allways/images/logo-allways-blanco.png"
                 alt="AllWays Health"
+                className="h-10 w-auto"
+              />
+              <div className="w-px h-8 bg-white/20" />
+              <img
+                src="/allways/images/logo-sanjose.png"
+                alt="San Jose Import Export S.A."
                 className="h-10 w-auto"
               />
             </div>

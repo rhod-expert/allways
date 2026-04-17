@@ -12,6 +12,10 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import ClientsPage from './pages/ClientsPage'
 import ClientDetailPage from './pages/ClientDetailPage'
+import ParticipantesPage from './pages/ParticipantesPage'
+import ParticipanteDetailPage from './pages/ParticipanteDetailPage'
+import SorteosPage from './pages/SorteosPage'
+import SorteoDetallePage from './pages/SorteoDetallePage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function PublicLayout({ children }) {
@@ -42,8 +46,12 @@ export default function App() {
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<DashboardPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="clientes" element={<ParticipantesPage />} />
+        <Route path="clientes/:id" element={<ParticipanteDetailPage />} />
         <Route path="registros" element={<ClientsPage />} />
         <Route path="registros/:id" element={<ClientDetailPage />} />
+        <Route path="sorteos" element={<SorteosPage />} />
+        <Route path="sorteos/:mes" element={<SorteoDetallePage />} />
       </Route>
 
       {/* 404 */}

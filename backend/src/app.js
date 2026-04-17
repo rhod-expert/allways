@@ -21,7 +21,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      'frame-ancestors': ["'self'", 'https://www.sanjosesa.com.py', 'https://sanjosesa.com.py'],
+      'frame-ancestors': ["'self'", 'https://www.sanjosesa.com.py', 'https://sanjosesa.com.py', 'https://www.allways.com.py', 'https://allways.com.py'],
       'script-src': ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
       'frame-src': ["'self'", 'https://www.google.com'],
       'connect-src': ["'self'", 'https://www.google.com']

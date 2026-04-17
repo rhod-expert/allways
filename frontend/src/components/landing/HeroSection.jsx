@@ -18,11 +18,19 @@ export default function HeroSection() {
           transition={{ duration: 0.8 }}
           className="mb-6"
         >
-          <img
-            src="/allways/images/logo-allways-blanco.png"
-            alt="AllWays Health"
-            className="h-16 sm:h-20 w-auto mx-auto mb-4"
-          />
+          <div className="flex items-center justify-center gap-4 sm:gap-6 mb-4">
+            <img
+              src="/allways/images/logo-allways-blanco.png"
+              alt="AllWays Health"
+              className="h-14 sm:h-18 w-auto"
+            />
+            <div className="w-px h-10 sm:h-14 bg-white/30" />
+            <img
+              src="/allways/images/logo-sanjose.png"
+              alt="San Jose Import Export S.A."
+              className="h-14 sm:h-18 w-auto"
+            />
+          </div>
           <p className="text-allways-cyan text-sm sm:text-base font-semibold uppercase tracking-[0.3em]">
             Show de Premios 2026
           </p>

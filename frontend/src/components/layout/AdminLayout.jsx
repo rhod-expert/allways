@@ -3,6 +3,8 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router'
 import {
   LayoutDashboard,
   Users,
+  FileText,
+  Trophy,
   LogOut,
   Menu,
   X,
@@ -13,7 +15,9 @@ import Spinner from '../ui/Spinner'
 
 const sidebarLinks = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/admin/registros', label: 'Registros', icon: Users },
+  { to: '/admin/clientes', label: 'Clientes', icon: Users },
+  { to: '/admin/registros', label: 'Registros', icon: FileText },
+  { to: '/admin/sorteos', label: 'Sorteos', icon: Trophy },
 ]
 
 export default function AdminLayout() {

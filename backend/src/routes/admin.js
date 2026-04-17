@@ -7,6 +7,7 @@ const authController = require('../controllers/authController');
 const adminController = require('../controllers/adminController');
 const dashboardController = require('../controllers/dashboardController');
 const couponController = require('../controllers/couponController');
+const sorteoController = require('../controllers/sorteoController');
 const { verifyToken } = require('../middleware/auth');
 const { adminLimiter, loginLimiter } = require('../middleware/rateLimiter');
 
@@ -41,5 +42,11 @@ router.get('/participantes/:id', adminController.getParticipante);
 
 // ---- Cupones ----
 router.get('/cupones', couponController.listCupones);
+
+// ---- Sorteos ----
+router.get('/sorteos', sorteoController.getResumen);
+router.get('/sorteos/:mes', sorteoController.getDetalle);
+router.post('/sorteos/:mes/ejecutar', sorteoController.ejecutar);
+router.delete('/sorteos/:mes/reset', sorteoController.reset);
 
 module.exports = router;
