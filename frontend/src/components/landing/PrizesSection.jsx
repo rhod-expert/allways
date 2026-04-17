@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const monthlyPrizes = [
   {
-    month: 'Abril',
+    month: 'Mayo',
+    date: 'Lunes 25 de Mayo',
     prizes: [
       { name: 'TV 50"', image: '/allways/images/prizes/tv.png' },
       { name: 'Licuadora XION 600ml', image: '/allways/images/prizes/licuadora-2.png' },
@@ -12,7 +13,8 @@ const monthlyPrizes = [
     ],
   },
   {
-    month: 'Mayo',
+    month: 'Junio',
+    date: 'Lunes 29 de Junio',
     prizes: [
       { name: 'TV 50"', image: '/allways/images/prizes/tv.png' },
       { name: 'Air Fryer XION 5L', image: '/allways/images/prizes/air-fryer.png' },
@@ -22,7 +24,8 @@ const monthlyPrizes = [
     ],
   },
   {
-    month: 'Junio',
+    month: 'Julio',
+    date: 'Lunes 27 de Julio',
     prizes: [
       { name: 'TV 50"', image: '/allways/images/prizes/tv.png' },
       { name: 'Aspiradora Robot XION', image: '/allways/images/prizes/robo-aspirador.png' },
@@ -32,7 +35,8 @@ const monthlyPrizes = [
     ],
   },
   {
-    month: 'Julio',
+    month: 'Agosto',
+    date: 'Lunes 31 de Agosto',
     prizes: [
       { name: 'Motoneta Kenton Viva 110', image: '/allways/images/prizes/moto.png' },
       { name: 'Air Fryer XION 5L', image: '/allways/images/prizes/air-fryer.png' },
@@ -41,7 +45,8 @@ const monthlyPrizes = [
     ],
   },
   {
-    month: 'Agosto',
+    month: 'Septiembre',
+    date: 'Lunes 28 de Septiembre',
     prizes: [
       { name: 'iPhone 16 128GB', image: '/allways/images/prizes/iphone.png' },
       { name: 'Air Fryer XION 5L', image: '/allways/images/prizes/air-fryer.png' },
@@ -51,7 +56,8 @@ const monthlyPrizes = [
     ],
   },
   {
-    month: 'Septiembre',
+    month: 'Octubre',
+    date: 'Lunes 26 de Octubre',
     prizes: [
       { name: 'Motoneta Kenton Viva 110', image: '/allways/images/prizes/moto.png' },
       { name: 'iPhone 16 128GB', image: '/allways/images/prizes/iphone.png' },
@@ -79,7 +85,7 @@ export default function PrizesSection() {
             Premios <span className="text-gold-gradient">Increibles</span>
           </h2>
           <p className="text-gray-400 mt-4 max-w-xl mx-auto text-sm">
-            Cada mes sorteamos premios entre todos los participantes. Cuantos mas cupones tengas, mas chances de ganar. 30 premios de abril a octubre.
+            Cada mes sorteamos premios entre todos los participantes. Cuantos mas cupones tengas, mas chances de ganar. 30 premios de mayo a noviembre.
           </p>
         </motion.div>
 
@@ -100,6 +106,16 @@ export default function PrizesSection() {
             </button>
           ))}
         </motion.div>
+
+        {/* Draw date subtitle */}
+        <motion.p
+          key={`date-${activeMonth}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center text-allways-gold-light text-sm font-semibold mb-6 tracking-wide"
+        >
+          Sorteo: {monthlyPrizes[activeMonth].date}
+        </motion.p>
 
         {/* Prize cards with animated transitions */}
         <div className="min-h-[320px]">

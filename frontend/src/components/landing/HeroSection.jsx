@@ -61,7 +61,7 @@ export default function HeroSection() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-lg sm:text-xl text-gray-300 mb-4 max-w-2xl mx-auto"
         >
-          30 premios de abril a octubre + <span className="text-allways-gold font-bold">Auto 0 KM</span>
+          30 premios de mayo a noviembre + <span className="text-allways-gold font-bold">Auto 0 KM</span>
         </motion.p>
 
         <motion.p

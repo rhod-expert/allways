@@ -52,9 +52,9 @@ export default function FinalDrawSection() {
             <Star size={20} className="text-allways-gold animate-pulse" />
           </motion.div>
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white uppercase mb-2 text-glow-gold">
-            Renault <span className="text-gold-gradient">Kwid</span> 0 KM
+            Fiat <span className="text-gold-gradient">Mobi</span> 0 KM
           </h2>
-          <p className="text-gray-400 text-lg">Octubre 2026</p>
+          <p className="text-gray-400 text-lg">Lunes 30 de Noviembre de 2026</p>
         </motion.div>
 
         <motion.div
@@ -71,8 +71,8 @@ export default function FinalDrawSection() {
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             >
               <img
-                src="/allways/images/prizes/kwid.png"
-                alt="Renault Kwid 0 KM"
+                src="/allways/images/prizes/mobi.png"
+                alt="Fiat Mobi 0 KM"
                 className="w-full max-w-md mx-auto drop-shadow-2xl"
               />
             </motion.div>
@@ -85,7 +85,7 @@ export default function FinalDrawSection() {
                 Todos tus cupones del ano participan
               </h3>
               <p className="text-gray-400 mb-6 leading-relaxed">
-                Cada cupon que acumules durante toda la promocion participa automaticamente en el gran sorteo final de octubre. Mientras mas compres, mas oportunidades tenes de llevarte un Renault Kwid 0 KM.
+                Cada cupon que acumules durante toda la promocion participa automaticamente en el gran sorteo final de noviembre. Mientras mas compres, mas oportunidades tenes de llevarte un Fiat Mobi 0 KM.
               </p>
               <Link to="/participar" className="btn-gold inline-flex">
                 PARTICIPAR AHORA

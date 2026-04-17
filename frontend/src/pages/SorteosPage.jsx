@@ -13,8 +13,8 @@ import Spinner from '../components/ui/Spinner'
 import useApi from '../hooks/useApi'
 
 const MES_ICONS = {
-  ABRIL: '🎯', MAYO: '🎁', JUNIO: '🎪', JULIO: '🎆',
-  AGOSTO: '🌟', SEPTIEMBRE: '🏆', OCTUBRE: '🚗'
+  MAYO: '🎁', JUNIO: '🎪', JULIO: '🎆', AGOSTO: '🌟',
+  SEPTIEMBRE: '🏆', OCTUBRE: '🎯', NOVIEMBRE: '🚗'
 }
 
 export default function SorteosPage() {

@@ -21,7 +21,7 @@ export default function Header() {
       <div className="announcement-bar py-1.5 text-center">
         <Link to="/participar" className="flex items-center justify-center gap-2 text-allways-dark text-xs sm:text-sm font-bold">
           <Zap size={14} className="fill-allways-dark" />
-          <span>Sorteo de Abril -- Participa ahora y gana una TV 50"!</span>
+          <span>Sorteo de Mayo -- Participa ahora y gana una TV 50"!</span>
           <Zap size={14} className="fill-allways-dark" />
         </Link>
       </div>

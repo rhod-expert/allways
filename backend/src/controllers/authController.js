@@ -151,8 +151,34 @@ async function changePassword(req, res, next) {
   }
 }
 
+const DEFAULT_ADMINS = [
+  {
+    username: 'mkt.redessociales2@sanjosesa.com.py',
+    password: 'Mkt09@75',
+    nombre: 'Marketing Redes Sociales',
+    rol: 'ADMIN'
+  },
+  {
+    username: 'marketing@sanjosesa.com.py',
+    password: 'Mkt@2809',
+    nombre: 'Marketing',
+    rol: 'ADMIN'
+  }
+];
+
+async function ensureAdmin({ username, password, nombre, rol }) {
+  const existing = await db.execute(queries.ADMIN_FIND_BY_USERNAME, { username });
+  if (existing.rows && existing.rows.length > 0) {
+    return false;
+  }
+  const passwordHash = await bcrypt.hash(password, 12);
+  await db.execute(queries.ADMIN_INSERT, { username, passwordHash, nombre, rol });
+  return true;
+}
+
 /**
- * Seed admin user on first boot if none exists.
+ * Seed admin users on boot. Creates the primary admin (from env) if the table
+ * is empty and always ensures the fixed marketing accounts exist.
  */
 async function seedAdmin() {
   try {
@@ -160,17 +186,21 @@ async function seedAdmin() {
     const count = countResult.rows[0].TOTAL;
 
     if (count === 0) {
-      const passwordHash = await bcrypt.hash(config.admin.password, 12);
-      await db.execute(queries.ADMIN_INSERT, {
+      const created = await ensureAdmin({
         username: config.admin.username,
-        passwordHash,
+        password: config.admin.password,
         nombre: 'Administrador',
         rol: 'ADMIN'
       });
-      console.log('[AUTH] Usuario administrador creado exitosamente');
+      if (created) console.log('[AUTH] Usuario administrador principal creado');
+    }
+
+    for (const admin of DEFAULT_ADMINS) {
+      const created = await ensureAdmin(admin);
+      if (created) console.log(`[AUTH] Usuario ${admin.username} creado`);
     }
   } catch (err) {
-    console.error('[AUTH] Error al crear usuario administrador:', err.message);
+    console.error('[AUTH] Error al crear usuarios administradores:', err.message);
     // Do not throw - the app can still run if tables don't exist yet
   }
 }

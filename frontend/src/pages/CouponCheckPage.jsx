@@ -126,8 +126,13 @@ export default function CouponCheckPage() {
             {coupons.length === 0 ? (
               <div className="glass-card text-center py-12">
                 <Ticket size={48} className="mx-auto text-gray-500 mb-4" />
-                <p className="text-gray-400 text-lg font-medium">No se encontraron cupones</p>
-                <p className="text-gray-500 text-sm mt-1">Aun no registraste ninguna factura con esta cedula.</p>
+                <p className="text-gray-400 text-lg font-medium">Facturas en Analisis</p>
+                <p className="text-gray-500 text-sm mt-2 max-w-sm mx-auto leading-relaxed">
+                  Si ya registraste tu factura, esta siendo validada por nuestro equipo. Tus cupones apareceran aqui una vez aprobada.
+                </p>
+                <p className="text-gray-500 text-sm mt-2 max-w-sm mx-auto leading-relaxed">
+                  Si aun no registraste, hacelo en la seccion <span className="text-allways-gold font-semibold">Participar</span>.
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
