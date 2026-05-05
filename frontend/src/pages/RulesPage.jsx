@@ -53,8 +53,8 @@ export default function RulesPage() {
             <li>Adquirir uno o mas productos de las marcas participantes (Empalux, Scotch-Brite, Wyda, Allways, Allways Health, Guapo, Trento) en cualquier punto de venta habilitado.</li>
             <li>Ingresar al sitio web de la Promocion y registrarse completando el formulario con sus datos personales.</li>
             <li>Cargar la fotografia de la factura de compra y, opcionalmente, la fotografia de los productos adquiridos.</li>
-            <li>Cada producto participante adquirido genera un (1) cupon para el sorteo mensual correspondiente.</li>
-            <li>Todos los cupones generados durante la promocion participan automaticamente en el sorteo final del automovil en noviembre.</li>
+            <li>Cada producto participante adquirido genera un (1) cupon. El cupon se incorpora al sorteo del mes en que se acepta el registro y, si no resulta ganador, sigue participando en todos los sorteos mensuales siguientes hasta ganar o hasta el cierre de la Promocion.</li>
+            <li>Todos los cupones generados durante la Promocion participan automaticamente, ademas, en el sorteo final del automovil en noviembre.</li>
           </ol>
 
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">6. Productos participantes</h2>

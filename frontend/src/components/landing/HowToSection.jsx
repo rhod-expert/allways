@@ -18,7 +18,7 @@ const steps = [
     icon: Ticket,
     number: '03',
     title: 'GANA PREMIOS',
-    description: 'Por cada producto obtenes un cupon para los sorteos mensuales. Mas productos, mas oportunidades de ganar.',
+    description: 'Por cada producto obtenes un cupon que participa en todos los sorteos mensuales hasta ganar. Mas productos, mas chances cada mes.',
   },
 ]
 
