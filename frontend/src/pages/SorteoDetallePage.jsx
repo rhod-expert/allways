@@ -53,7 +53,7 @@ export default function SorteoDetallePage() {
     setRevealedPrizes([])
 
     try {
-      const result = await post(`/admin/sorteos/${mes}/ejecutar`)
+      const result = await post(`/admin/sorteos/${mes}/ejecutar`, {})
       toast.success(result.message || 'Sorteo realizado exitosamente')
 
       // Animate prize reveals one by one
@@ -114,7 +114,7 @@ export default function SorteoDetallePage() {
           <div>
             <h2 className="text-xl sm:text-2xl font-black text-gray-800">Sorteo de {mes}</h2>
             <p className="text-gray-500 text-sm">
-              {premios.length} premio{premios.length !== 1 ? 's' : ''} &middot; {totalElegibles} cupones elegibles
+              {premios.length} premio{premios.length !== 1 ? 's' : ''} &middot; {totalElegibles} cupones acumulados
             </p>
           </div>
         </div>
@@ -284,10 +284,10 @@ export default function SorteoDetallePage() {
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
             <p className="text-sm text-yellow-800">
               Se seleccionaran <strong>{premios.length} ganadores</strong> aleatoriamente
-              entre <strong>{totalElegibles} cupones elegibles</strong> para el mes de <strong>{mes}</strong>.
+              entre <strong>{totalElegibles} cupones acumulados</strong> (incluye cupones de meses anteriores que aun no ganaron) para el sorteo de <strong>{mes}</strong>.
             </p>
             <p className="text-xs text-yellow-600 mt-2">
-              Cada participante puede ganar maximo un premio por mes.
+              Cada participante puede ganar maximo un premio por mes. Los cupones que no ganen continuan en el sorteo del mes siguiente.
             </p>
           </div>
           <div className="flex gap-3 justify-end">

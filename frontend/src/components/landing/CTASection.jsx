@@ -33,7 +33,7 @@ export default function CTASection() {
             <span className="text-gold-gradient italic block sm:inline">Carga tu factura ahora!</span>
           </h2>
           <p className="text-gray-300 mb-8 text-lg max-w-lg mx-auto">
-            No pierdas la oportunidad de ganar premios increibles cada mes. Cada producto es un cupon mas.
+            No pierdas la oportunidad de ganar premios increibles cada mes. Cada producto es un cupon mas que participa en todos los sorteos hasta ganar.
           </p>
           <Link to="/participar" className="btn-gold text-lg px-10 py-4 inline-flex items-center gap-2 group">
             CARGAR FACTURA

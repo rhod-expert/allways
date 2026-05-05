@@ -85,7 +85,7 @@ export default function PrizesSection() {
             Premios <span className="text-gold-gradient">Increibles</span>
           </h2>
           <p className="text-gray-400 mt-4 max-w-xl mx-auto text-sm">
-            Cada mes sorteamos premios entre todos los participantes. Cuantos mas cupones tengas, mas chances de ganar. 30 premios de mayo a noviembre.
+            Cada mes sorteamos premios entre todos los cupones acumulados. Si tu cupon no gana, sigue participando el mes siguiente. 30 premios de mayo a noviembre.
           </p>
         </motion.div>
 
