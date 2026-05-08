@@ -648,6 +648,19 @@ pm2 flush allways-api
 
 # Ver estado PM2
 pm2 monit
+
+# Purgar logs de auditoria viejos (default 12 meses)
+node /var/www/html/allways/scripts/purge-old-logs.js --dry-run    # ver qué borraría
+node /var/www/html/allways/scripts/purge-old-logs.js              # ejecutar
+node /var/www/html/allways/scripts/purge-old-logs.js --months=6   # retencion personalizada
+```
+
+### Retencion de logs de auditoria
+
+Las tablas `ALLWAYS_ADMIN_LOG`, `ALLWAYS_CLIENTE_LOG` y `ALLWAYS_WA_LOG_NOTIF` crecen indefinidamente. Recomendamos correr `scripts/purge-old-logs.js` semanalmente vía cron (12 meses de retención por defecto):
+
+```cron
+0 4 * * 0  /usr/bin/node /var/www/html/allways/scripts/purge-old-logs.js >> /var/log/allways-purge.log 2>&1
 ```
 
 ---

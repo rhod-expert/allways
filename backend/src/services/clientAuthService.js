@@ -13,6 +13,21 @@ const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 const EMAIL_RULE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Common weak passwords. Catches the obvious cases without HIBP infra.
+// Comparison is case-insensitive and trims; minor variants like
+// '12345678!' are intentionally still allowed (rule already forces
+// 8 chars + letter + number, and these are not in the worst-N list).
+const WEAK_PASSWORDS = new Set([
+  '12345678', '123456789', '1234567890', 'abcd1234', 'qwerty123',
+  'password', 'password1', 'password123', 'passw0rd',
+  'iloveyou1', 'admin123', 'admin1234', 'welcome1', 'changeme1',
+  'allways123', 'allwayshealth', 'sanjose123', 'sanjosesa1',
+  'alpha123', 'test1234', 'asdf1234', 'asdfasdf1', '0987654321',
+  // Common Spanish-language weak passwords
+  'contrasena', 'contrasena1', 'contrasena123',
+  'paraguay1', 'paraguay123', 'asuncion1', 'mibebe123'
+]);
+
 function sha256(s) {
   return crypto.createHash('sha256').update(s).digest('hex');
 }
@@ -32,6 +47,9 @@ function validatePassword(password) {
   }
   if (!PASSWORD_RULE.test(password)) {
     return 'La contrasena debe contener al menos una letra y un numero.';
+  }
+  if (WEAK_PASSWORDS.has(String(password).trim().toLowerCase())) {
+    return 'Esta contrasena es muy comun. Elige una mas segura.';
   }
   return null;
 }

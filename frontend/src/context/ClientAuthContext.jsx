@@ -3,6 +3,25 @@ import clientApi from '../services/clientApi'
 
 export const ClientAuthContext = createContext(null)
 
+/**
+ * Wipe PWA caches that may contain authenticated API responses or assets
+ * scoped to the previous user. Safe to call when caches API is unavailable
+ * (older browsers / non-secure contexts).
+ */
+async function clearAuthenticatedCaches() {
+  if (typeof caches === 'undefined') return
+  try {
+    const names = await caches.keys()
+    await Promise.all(
+      names
+        .filter((name) => name.startsWith('allways-api') || name.startsWith('allways-images'))
+        .map((name) => caches.delete(name))
+    )
+  } catch {
+    /* non-fatal */
+  }
+}
+
 export function ClientAuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(null)
@@ -38,6 +57,16 @@ export function ClientAuthProvider({ children }) {
     localStorage.removeItem('allways_cliente_user')
     setToken(null)
     setUser(null)
+    await clearAuthenticatedCaches()
+  }, [])
+
+  const logoutEverywhere = useCallback(async () => {
+    try { await clientApi.post('/cliente/logout-everywhere') } catch {}
+    localStorage.removeItem('allways_cliente_token')
+    localStorage.removeItem('allways_cliente_user')
+    setToken(null)
+    setUser(null)
+    await clearAuthenticatedCaches()
   }, [])
 
   const refreshMe = useCallback(async () => {
@@ -51,7 +80,7 @@ export function ClientAuthProvider({ children }) {
 
   return (
     <ClientAuthContext.Provider
-      value={{ user, token, loading, login, logout, refreshMe, isAuthenticated }}
+      value={{ user, token, loading, login, logout, logoutEverywhere, refreshMe, isAuthenticated }}
     >
       {children}
     </ClientAuthContext.Provider>
