@@ -69,11 +69,14 @@ const loginLimiter = rateLimit({
 
 /**
  * Rate limiter for cliente login endpoint (CI + password).
- * 5 attempts per IP per 15 minutes.
+ * 15 attempts per IP per 15 minutes — allows ~3 distinct people behind
+ * the same NAT/router to fail their 5-attempt allowance independently.
+ * Per-account brute force is separately protected by BLOQUEADO_HASTA
+ * (15-min lockout after 5 failures on the same cuenta).
  */
 const clientLoginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 15,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: {

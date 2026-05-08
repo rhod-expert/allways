@@ -150,6 +150,20 @@ END;
 /
 
 -- ------------------------------------------------------------
+-- 4b. Allow auth notifications (SETUP/RESET/PASSWORD_CAMBIADA) to be
+--    logged in ALLWAYS_WA_LOG_NOTIF — they are not tied to a registro.
+-- ------------------------------------------------------------
+DECLARE
+  e_already_nullable EXCEPTION;
+  PRAGMA EXCEPTION_INIT(e_already_nullable, -1451);
+BEGIN
+  EXECUTE IMMEDIATE 'ALTER TABLE ALLWAYS_WA_LOG_NOTIF MODIFY (REGISTRO_ID NUMBER NULL)';
+EXCEPTION
+  WHEN e_already_nullable THEN NULL;
+END;
+/
+
+-- ------------------------------------------------------------
 -- 5. New WhatsApp templates
 --    Insert-or-update so re-runs are safe.
 -- ------------------------------------------------------------
