@@ -26,6 +26,8 @@ const initialForm = {
   complemento: '',
   numero_factura: '',
   cantidad_productos: '1',
+  tienda: '',
+  vendedor: '',
   foto_factura: null,
   foto_productos: null,
 }
@@ -210,6 +212,8 @@ export default function RegisterPage() {
       if (form.complemento.trim()) formData.append('complemento', form.complemento.trim())
       formData.append('numeroFactura', form.numero_factura.trim())
       formData.append('cantidadProductos', form.cantidad_productos)
+      formData.append('tienda', form.tienda.trim())
+      if (form.vendedor.trim()) formData.append('vendedor', form.vendedor.trim())
       formData.append('imagenFactura', form.foto_factura)
       if (form.foto_productos) {
         formData.append('imagenProductos', form.foto_productos)
@@ -438,6 +442,25 @@ export default function RegisterPage() {
                     onChange={handleChange}
                     error={errors.cantidad_productos}
                     required
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="Tienda / Punto de venta"
+                    name="tienda"
+                    value={form.tienda}
+                    onChange={handleChange}
+                    placeholder="Ej: Farmacia Catedral"
+                    error={errors.tienda}
+                    required
+                  />
+                  <Input
+                    label="Nombre del vendedor(a)"
+                    name="vendedor"
+                    value={form.vendedor}
+                    onChange={handleChange}
+                    placeholder="Opcional"
+                    error={errors.vendedor}
                   />
                 </div>
               </div>

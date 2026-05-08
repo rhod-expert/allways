@@ -102,6 +102,9 @@ export function validateRegistrationForm(data) {
   const cantidadErr = validateCantidad(data.cantidad_productos)
   if (cantidadErr) errors.cantidad_productos = cantidadErr
 
+  const tiendaErr = validateRequired(data.tienda, 'El nombre de la tienda')
+  if (tiendaErr) errors.tienda = tiendaErr
+
   const imgErr = validateImage(data.foto_factura)
   if (imgErr) errors.foto_factura = imgErr
 

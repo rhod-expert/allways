@@ -231,6 +231,12 @@ export default function ParticipanteDetailPage() {
                     <p className="font-bold text-green-700">{reg.cupones?.length || 0}</p>
                   </div>
                 </div>
+                {(reg.TIENDA || reg.VENDEDOR) && (
+                  <div className="mt-2 pt-2 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-500">
+                    {reg.TIENDA && <span><strong>Tienda:</strong> {reg.TIENDA}</span>}
+                    {reg.VENDEDOR && <span><strong>Vendedor:</strong> {reg.VENDEDOR}</span>}
+                  </div>
+                )}
 
                 {/* Coupons list */}
                 {reg.cupones && reg.cupones.length > 0 && (

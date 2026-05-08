@@ -12,6 +12,7 @@ const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/uploads');
 const whatsappRoutes = require('./routes/whatsapp');
+const clienteRoutes = require('./routes/cliente');
 
 const app = express();
 
@@ -83,6 +84,7 @@ app.use('/api', publicRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/cliente', clienteRoutes);
 
 // ---- 404 Handler ----
 app.use(notFoundHandler);

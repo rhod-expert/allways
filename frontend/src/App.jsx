@@ -17,6 +17,13 @@ import ParticipanteDetailPage from './pages/ParticipanteDetailPage'
 import SorteosPage from './pages/SorteosPage'
 import SorteoDetallePage from './pages/SorteoDetallePage'
 import WhatsAppPage from './pages/WhatsAppPage'
+import ClienteLoginPage from './pages/cliente/LoginPage'
+import RecuperarPage from './pages/cliente/RecuperarPage'
+import SetupPasswordPage from './pages/cliente/SetupPasswordPage'
+import ResetPasswordPage from './pages/cliente/ResetPasswordPage'
+import ClienteDashboardPage from './pages/cliente/DashboardPage'
+import MisRegistrosPage from './pages/cliente/MisRegistrosPage'
+import ClientLayout, { ClientProtectedRoute } from './components/layout/ClientLayout'
 import NotFoundPage from './pages/NotFoundPage'
 
 function PublicLayout({ children }) {
@@ -54,6 +61,26 @@ export default function App() {
         <Route path="sorteos" element={<SorteosPage />} />
         <Route path="sorteos/:mes" element={<SorteoDetallePage />} />
         <Route path="whatsapp" element={<WhatsAppPage />} />
+      </Route>
+
+      {/* Cliente Area - public auth flows */}
+      <Route path="/cliente/login" element={<ClienteLoginPage />} />
+      <Route path="/cliente/recuperar" element={<RecuperarPage />} />
+      <Route path="/cliente/setup-password" element={<SetupPasswordPage />} />
+      <Route path="/cliente/reset-password" element={<ResetPasswordPage />} />
+
+      {/* Cliente Area - protected */}
+      <Route
+        path="/cliente"
+        element={
+          <ClientProtectedRoute>
+            <ClientLayout />
+          </ClientProtectedRoute>
+        }
+      >
+        <Route index element={<ClienteDashboardPage />} />
+        <Route path="dashboard" element={<ClienteDashboardPage />} />
+        <Route path="registros" element={<MisRegistrosPage />} />
       </Route>
 
       {/* 404 */}

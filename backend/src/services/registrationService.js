@@ -70,12 +70,16 @@ async function register(data, files) {
     departamento, ciudad,
     departamentoId, distritoId, ciudadId, barrioId,
     calle, numeroCasa, complemento,
-    numeroFactura, cantidadProductos
+    numeroFactura, cantidadProductos,
+    tienda, vendedor
   } = data;
 
   // Validate required fields
   if (!nombre || !cedula || !telefono || !numeroFactura || !cantidadProductos) {
     throw Object.assign(new Error('Todos los campos obligatorios deben ser completados.'), { statusCode: 400 });
+  }
+  if (!tienda || !tienda.trim()) {
+    throw Object.assign(new Error('El nombre de la tienda / punto de venta es obligatorio.'), { statusCode: 400 });
   }
 
   // Validate factura image is present
@@ -108,11 +112,13 @@ async function register(data, files) {
     );
 
     let participanteId;
+    let isNewParticipante = false;
 
     if (existingResult.rows && existingResult.rows.length > 0) {
       // Participant exists - link to existing
       participanteId = existingResult.rows[0].ID;
     } else {
+      isNewParticipante = true;
       // Create new participant (sanitize HTML from all text inputs)
       const insertResult = await connection.execute(
         queries.PARTICIPANTE_INSERT,
@@ -138,25 +144,40 @@ async function register(data, files) {
     }
 
     // Create registration record
-    const registroResult = await connection.execute(
-      queries.REGISTRO_INSERT,
-      {
-        participanteId,
-        numeroFactura: stripHtml(numeroFactura),
-        cantidadProductos: cantidadNum,
-        imagenFactura: facturaFile.filename,
-        imagenProductos: productosFilename,
-        ipRegistro: data.ipRegistro || null,
-        id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
-      },
-      { autoCommit: false }
-    );
+    let registroResult;
+    try {
+      registroResult = await connection.execute(
+        queries.REGISTRO_INSERT,
+        {
+          participanteId,
+          numeroFactura: stripHtml(numeroFactura),
+          cantidadProductos: cantidadNum,
+          imagenFactura: facturaFile.filename,
+          imagenProductos: productosFilename,
+          ipRegistro: data.ipRegistro || null,
+          tienda: stripHtml(tienda),
+          vendedor: stripHtml(vendedor || '') || null,
+          id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
+        },
+        { autoCommit: false }
+      );
+    } catch (e) {
+      // ORA-00001: unique_constraint_violation on UK_FACTURA_PART
+      if (e && e.errorNum === 1) {
+        throw Object.assign(
+          new Error('Esta factura ya fue registrada anteriormente.'),
+          { statusCode: 409 }
+        );
+      }
+      throw e;
+    }
 
     const registroId = registroResult.outBinds.id[0];
 
     return {
       participanteId,
-      registroId
+      registroId,
+      isNewParticipante
     };
   });
 
@@ -175,6 +196,20 @@ async function register(data, files) {
   }).catch((e) => {
     console.error('[NOTIF] notifyRecibido fallo:', e.message);
   });
+
+  // Brand new participant: send a magic-link to set up their cliente-area password.
+  if (result.isNewParticipante) {
+    // Lazy require to avoid circular deps at module load.
+    const clientAuthService = require('./clientAuthService');
+    clientAuthService.dispatchSetupMagicLink({
+      participanteId: result.participanteId,
+      nombre,
+      telefono,
+      ipSolicitud: data.ipRegistro || null
+    }).catch((e) => {
+      console.error('[NOTIF] setup magic link fallo:', e.message);
+    });
+  }
 
   return {
     success: true,

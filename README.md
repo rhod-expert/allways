@@ -190,6 +190,22 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 | `POST` | `/api/admin/whatsapp/plantillas/:codigo/preview` | Renderizar plantilla con variables `{{x}}` |
 | `GET` | `/api/uploads/:type/:filename` | Servir imagenes (facturas/productos) |
 
+### Cliente (area del cliente, JWT separado de admin)
+
+Login: 5 intentos / 15 min por IP. Recuperación: 3 / hora por IP. API autenticada: 60 / min.
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| `POST` | `/api/cliente/login` | CI + password (+ recordarme) → JWT (8h o 30d) |
+| `POST` | `/api/cliente/password/recuperar` | Solicita magic-link reset por WhatsApp (anti-enumeration) |
+| `POST` | `/api/cliente/password/setup` | Setea password inicial via token enviado tras 1er registro |
+| `POST` | `/api/cliente/password/reset` | Setea nueva password via token de recuperación |
+| `GET`  | `/api/cliente/me` | Datos completos del participante (auth) |
+| `GET`  | `/api/cliente/registros` | Mis registros con tienda/vendedor/estado/cupones (auth) |
+| `GET`  | `/api/cliente/cupones` | Mis cupones + premios del mes vigente + totales (auth) |
+| `POST` | `/api/cliente/password/cambiar` | Cambio autenticado (actual + nueva) |
+| `POST` | `/api/cliente/logout` | Logout (drop client-side, log audit) |
+
 ### WhatsApp Webhook (publico, llamado por Evolution API en localhost)
 
 | Metodo | Ruta | Descripcion |
@@ -283,6 +299,13 @@ curl -X PUT http://localhost:3001/api/admin/cambiar-password \
 | `ALLWAYS_WA_CHATS` | Chats de WhatsApp (FK opcional → PARTICIPANTES, UK: REMOTE_JID) |
 | `ALLWAYS_WA_MENSAJES` | Historial de mensajes IN/OUT (FK → CHATS, REGISTROS, ADMIN) |
 | `ALLWAYS_WA_LOG_NOTIF` | Log de notificaciones automaticas (RECIBIDO/ACEPTADO/RECHAZADO) por registro |
+| `ALLWAYS_PARTICIPANTE_TOKEN` | Tokens SHA-256 para magic-link (SETUP) y reset password (RESET) |
+| `ALLWAYS_CLIENTE_LOG` | Audit trail de logins, recuperaciones y cambios de password del cliente |
+
+`ALLWAYS_REGISTROS` ahora incluye `TIENDA` (obligatorio) y `VENDEDOR` (opcional).
+`ALLWAYS_PARTICIPANTES` ahora incluye `PASSWORD_HASH`, `PASSWORD_SET_AT`, `ULTIMO_LOGIN`,
+`INTENTOS_FALLIDOS` y `BLOQUEADO_HASTA` (lockout 15 min tras 5 fallos).
+UK `(PARTICIPANTE_ID, NUMERO_FACTURA)` impide cargar la misma factura dos veces.
 
 ### Columnas clave
 
@@ -347,6 +370,32 @@ Las notificaciones se envian con [Evolution API v2](https://doc.evolution-api.co
 
 **Auditoria:** cada intento de notificacion automatica deja una fila en `ALLWAYS_WA_LOG_NOTIF` con `EXITOSO=S/N` y `ERROR_DETALLE` (response cruda de Evolution truncada a 1900 chars). Las fallas NUNCA abortan el flujo de registro/validacion (try/catch fire-and-forget).
 
+### Area del Cliente (login propio + PWA)
+
+Cada participante tiene login propio con CI + password. Endpoints en `/api/cliente/*`, JWT separado del admin (`JWT_SECRET_CLIENTE`).
+
+**Onboarding (magic link):** cuando se crea un participante nuevo via registro publico, `registrationService` dispara `notifySetupPassword` con un token SETUP de 24 h. El cliente recibe por WhatsApp:
+
+> Hola {{nombre}}, ya recibimos tu primer registro. Crea tu contraseña aquí: {{link}}
+
+El link apunta a `/cliente/setup-password?t=<token>` donde el cliente define email + password. El token se almacena hasheado (SHA-256) y se invalida tras uso.
+
+**Recuperación de contraseña por WhatsApp:**
+1. Cliente entra a `/cliente/recuperar` y manda CI.
+2. Backend responde 200 genérico (anti-enumeration). Si la CI existe, genera token RESET (30 min) y manda link por WhatsApp.
+3. Cliente abre link → setea nueva password → backend invalida los demás tokens activos del usuario.
+4. Notificación automática `PASSWORD_CAMBIADA` confirma el cambio (defensa en profundidad).
+
+**Lockout:** 5 intentos fallidos → `BLOQUEADO_HASTA = now + 15 min`. Login devuelve 423 con `Retry-After`.
+
+**PWA:** `vite-plugin-pwa` genera service worker (NetworkFirst para `/api/*`, CacheFirst para imágenes). El manifest apunta a `/cliente/login` como `start_url`. Banner de instalación se muestra en el área autenticada.
+
+**Datos en el dashboard:**
+- Mis cupones (con tienda, mes de sorteo, badge ganador)
+- Premios del mes vigente
+- Mis registros (todas las facturas con estado, tienda, vendedor)
+- Mis datos personales (read-only, contacto soporte para modificar)
+
 ### Consulta de Cupones (publico)
 - Busqueda por cedula → lista cupones con estado y mes de sorteo
 - reCAPTCHA requerido
@@ -380,6 +429,12 @@ Las notificaciones se envian con [Evolution API v2](https://doc.evolution-api.co
 | `EVOLUTION_API_KEY` | API key global de Evolution | `***` |
 | `EVOLUTION_INSTANCE_NAME` | Nombre de la instancia | `allways-campana` |
 | `EVOLUTION_DEFAULT_COUNTRY_CODE` | Codigo de pais para normalizacion | `595` |
+| `JWT_SECRET_CLIENTE` | Secret separado para JWTs del area del cliente (64+ chars) | `(auto-generado)` |
+| `CLIENTE_JWT_EXPIRES_SHORT` | Duración de sesión sin "recordarme" | `8h` |
+| `CLIENTE_JWT_EXPIRES_LONG` | Duración de sesión con "recordarme" | `30d` |
+| `CLIENTE_SETUP_TOKEN_MIN` | Validez del magic-link inicial en minutos | `1440` (24 h) |
+| `CLIENTE_RESET_TOKEN_MIN` | Validez del token de reset en minutos | `30` |
+| `PUBLIC_BASE_URL` | URL base usada en los magic-links de WhatsApp | `https://www.sanjosesa.com.py/allways` |
 
 ### Nginx
 

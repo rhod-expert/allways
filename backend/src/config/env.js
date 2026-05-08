@@ -63,7 +63,15 @@ const config = {
     apiKey: process.env.EVOLUTION_API_KEY || '',
     instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'allways-campana',
     defaultCountryCode: process.env.EVOLUTION_DEFAULT_COUNTRY_CODE || '595'
-  }
+  },
+  cliente: {
+    jwtSecret: process.env.JWT_SECRET_CLIENTE || process.env.JWT_SECRET,
+    jwtExpiresShort: process.env.CLIENTE_JWT_EXPIRES_SHORT || '8h',
+    jwtExpiresLong: process.env.CLIENTE_JWT_EXPIRES_LONG || '30d',
+    setupTokenMinutes: parseInt(process.env.CLIENTE_SETUP_TOKEN_MIN, 10) || (24 * 60),
+    resetTokenMinutes: parseInt(process.env.CLIENTE_RESET_TOKEN_MIN, 10) || 30
+  },
+  publicBaseUrl: process.env.PUBLIC_BASE_URL || 'https://www.sanjosesa.com.py/allways'
 };
 
 module.exports = config;

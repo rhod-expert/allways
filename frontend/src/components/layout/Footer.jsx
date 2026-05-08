@@ -85,6 +85,11 @@ export default function Footer() {
                   Mis Cupones
                 </Link>
               </li>
+              <li>
+                <Link to="/cliente/login" className="text-gray-400 hover:text-allways-gold text-sm transition-colors">
+                  Area del Cliente
+                </Link>
+              </li>
             </ul>
           </div>
 

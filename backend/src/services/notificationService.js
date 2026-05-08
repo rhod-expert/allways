@@ -156,10 +156,70 @@ async function notifyRechazado({ participante, registro, motivo }) {
   });
 }
 
+function describeMinutes(minutos) {
+  if (!minutos) return '';
+  if (minutos % 60 === 0) {
+    const h = minutos / 60;
+    return `${h} ${h === 1 ? 'hora' : 'horas'}`;
+  }
+  return `${minutos} minutos`;
+}
+
+async function notifySetupPassword({ participante, link, expiraMinutos }) {
+  return sendAndStore({
+    participante,
+    registroId: null,
+    tipo: 'SETUP_PASSWORD',
+    plantillaCodigo: 'SETUP_PASSWORD',
+    vars: {
+      nombre: (participante.NOMBRE || participante.nombre || '').split(' ')[0] || 'Hola',
+      link,
+      expira: describeMinutes(expiraMinutos)
+    }
+  });
+}
+
+async function notifyRecuperarPassword({ participante, link, expiraMinutos }) {
+  return sendAndStore({
+    participante,
+    registroId: null,
+    tipo: 'RECUPERAR_PASSWORD',
+    plantillaCodigo: 'RECUPERAR_PASSWORD',
+    vars: {
+      nombre: (participante.NOMBRE || participante.nombre || '').split(' ')[0] || 'Hola',
+      link,
+      expira: describeMinutes(expiraMinutos)
+    }
+  });
+}
+
+async function notifyPasswordCambiada({ participanteId }) {
+  // Lookup participante details first since callers usually only have the id.
+  const r = await db.execute(
+    'SELECT ID, NOMBRE, TELEFONO FROM ALLWAYS_PARTICIPANTES WHERE ID = :id',
+    { id: participanteId }
+  );
+  const p = r.rows?.[0];
+  if (!p) return;
+  return sendAndStore({
+    participante: p,
+    registroId: null,
+    tipo: 'PASSWORD_CAMBIADA',
+    plantillaCodigo: 'PASSWORD_CAMBIADA',
+    vars: {
+      nombre: (p.NOMBRE || '').split(' ')[0] || 'Hola',
+      fecha: new Date().toLocaleString('es-PY', { dateStyle: 'short', timeStyle: 'short' })
+    }
+  });
+}
+
 module.exports = {
   notifyRecibido,
   notifyAceptado,
   notifyRechazado,
+  notifySetupPassword,
+  notifyRecuperarPassword,
+  notifyPasswordCambiada,
   applyTemplate,
   getPlantilla
 };

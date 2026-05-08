@@ -17,6 +17,8 @@ import {
   ZoomIn,
   Map,
   Home,
+  Store,
+  UserSquare,
 } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
@@ -249,6 +251,8 @@ export default function ClientDetailPage() {
                   <p className="font-bold text-xl sm:text-2xl text-allways-blue">{registration.CANTIDAD_PRODUCTOS}</p>
                 </div>
               </div>
+              <InfoRow icon={Store} label="Tienda / Punto de venta" value={registration.TIENDA || '-'} />
+              <InfoRow icon={UserSquare} label="Vendedor" value={registration.VENDEDOR || '-'} />
               <InfoRow
                 icon={Calendar}
                 label="Fecha de registro"

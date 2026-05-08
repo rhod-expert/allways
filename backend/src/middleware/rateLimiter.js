@@ -67,9 +67,61 @@ const loginLimiter = rateLimit({
   keyGenerator: (req) => req.ip
 });
 
+/**
+ * Rate limiter for cliente login endpoint (CI + password).
+ * 5 attempts per IP per 15 minutes.
+ */
+const clientLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Demasiados intentos de inicio de sesion. Intente nuevamente en 15 minutos.'
+  },
+  keyGenerator: (req) => req.ip
+});
+
+/**
+ * Rate limiter for cliente password recovery / setup endpoints.
+ * 3 attempts per IP per hour - protects against WhatsApp spam abuse.
+ */
+const clientRecoveryLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Demasiados pedidos. Intente nuevamente en una hora.'
+  },
+  keyGenerator: (req) => req.ip
+});
+
+/**
+ * Rate limiter for authenticated cliente endpoints (dashboard polling, etc.).
+ * 60 req/min - more permissive than legacy public consultaLimiter
+ * because the cliente already authenticated.
+ */
+const clientApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Demasiadas solicitudes. Intente nuevamente en un minuto.'
+  },
+  keyGenerator: (req) => req.ip
+});
+
 module.exports = {
   registroLimiter,
   consultaLimiter,
   adminLimiter,
-  loginLimiter
+  loginLimiter,
+  clientLoginLimiter,
+  clientRecoveryLimiter,
+  clientApiLimiter
 };
