@@ -16,6 +16,7 @@ import ParticipantesPage from './pages/ParticipantesPage'
 import ParticipanteDetailPage from './pages/ParticipanteDetailPage'
 import SorteosPage from './pages/SorteosPage'
 import SorteoDetallePage from './pages/SorteoDetallePage'
+import WhatsAppPage from './pages/WhatsAppPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function PublicLayout({ children }) {
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="registros/:id" element={<ClientDetailPage />} />
         <Route path="sorteos" element={<SorteosPage />} />
         <Route path="sorteos/:mes" element={<SorteoDetallePage />} />
+        <Route path="whatsapp" element={<WhatsAppPage />} />
       </Route>
 
       {/* 404 */}

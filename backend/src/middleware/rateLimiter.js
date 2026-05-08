@@ -36,11 +36,12 @@ const consultaLimiter = rateLimit({
 
 /**
  * Rate limiter for admin endpoints.
- * 30 requests per IP per minute.
+ * 120 requests per IP per minute — accommodates the WhatsApp page,
+ * which polls instance status (3s) + messages (5s) + chats (8s).
  */
 const adminLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 30,
+  max: 120,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: {

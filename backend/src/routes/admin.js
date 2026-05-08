@@ -8,6 +8,7 @@ const adminController = require('../controllers/adminController');
 const dashboardController = require('../controllers/dashboardController');
 const couponController = require('../controllers/couponController');
 const sorteoController = require('../controllers/sorteoController');
+const whatsappController = require('../controllers/whatsappController');
 const { verifyToken } = require('../middleware/auth');
 const { adminLimiter, loginLimiter } = require('../middleware/rateLimiter');
 
@@ -48,5 +49,17 @@ router.get('/sorteos', sorteoController.getResumen);
 router.get('/sorteos/:mes', sorteoController.getDetalle);
 router.post('/sorteos/:mes/ejecutar', sorteoController.ejecutar);
 router.delete('/sorteos/:mes/reset', sorteoController.reset);
+
+// ---- WhatsApp ----
+router.get('/whatsapp/instancia', whatsappController.getInstancia);
+router.post('/whatsapp/instancia/conectar', whatsappController.connectInstancia);
+router.post('/whatsapp/instancia/desconectar', whatsappController.disconnectInstancia);
+router.get('/whatsapp/chats', whatsappController.listChats);
+router.get('/whatsapp/chats/:chatId/mensajes', whatsappController.listMensajes);
+router.post('/whatsapp/chats/:chatId/mensajes', whatsappController.sendMensaje);
+router.post('/whatsapp/chats/:chatId/leido', whatsappController.marcarLeido);
+router.get('/whatsapp/plantillas', whatsappController.listPlantillas);
+router.put('/whatsapp/plantillas/:codigo', whatsappController.updatePlantilla);
+router.post('/whatsapp/plantillas/:codigo/preview', whatsappController.previewPlantilla);
 
 module.exports = router;

@@ -13,7 +13,7 @@ export default function useApi() {
       if (method === 'get' || method === 'delete') {
         response = await api[method](url, config)
       } else {
-        response = await api[method](url, data, config)
+        response = await api[method](url, data ?? {}, config)
       }
       return response.data
     } catch (err) {

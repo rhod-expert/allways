@@ -57,6 +57,12 @@ const config = {
   admin: {
     username: process.env.ADMIN_USERNAME,
     password: process.env.ADMIN_PASSWORD
+  },
+  evolution: {
+    url: process.env.EVOLUTION_API_URL || 'http://localhost:8080',
+    apiKey: process.env.EVOLUTION_API_KEY || '',
+    instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'allways-campana',
+    defaultCountryCode: process.env.EVOLUTION_DEFAULT_COUNTRY_CODE || '595'
   }
 };
 

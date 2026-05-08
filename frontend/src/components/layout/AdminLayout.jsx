@@ -5,6 +5,7 @@ import {
   Users,
   FileText,
   Trophy,
+  MessageCircle,
   LogOut,
   Menu,
   X,
@@ -18,6 +19,7 @@ const sidebarLinks = [
   { to: '/admin/clientes', label: 'Clientes', icon: Users },
   { to: '/admin/registros', label: 'Registros', icon: FileText },
   { to: '/admin/sorteos', label: 'Sorteos', icon: Trophy },
+  { to: '/admin/whatsapp', label: 'WhatsApp', icon: MessageCircle },
 ]
 
 export default function AdminLayout() {

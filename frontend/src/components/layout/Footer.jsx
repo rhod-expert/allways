@@ -44,7 +44,7 @@ export default function Footer() {
             {/* Social icons */}
             <div className="flex items-center gap-3">
               <a
-                href="https://www.instagram.com/allwayshealth"
+                href="https://www.instagram.com/allwaysmedical"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-gray-400 hover:text-allways-gold hover:border-allways-gold/50 transition-all duration-300"
@@ -53,7 +53,7 @@ export default function Footer() {
                 <InstagramIcon />
               </a>
               <a
-                href="https://www.facebook.com/allwayshealth"
+                href="https://www.facebook.com/allwaysmedical"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-gray-400 hover:text-allways-gold hover:border-allways-gold/50 transition-all duration-300"

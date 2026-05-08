@@ -7,6 +7,7 @@ const oracledb = require('oracledb');
 const db = require('../config/database');
 const queries = require('../models/queries');
 const config = require('../config/env');
+const notificationService = require('./notificationService');
 
 const MAX_WIDTH = 1920;
 
@@ -157,6 +158,22 @@ async function register(data, files) {
       participanteId,
       registroId
     };
+  });
+
+  // Fire-and-forget WhatsApp confirmation. Failure must NOT abort registration.
+  notificationService.notifyRecibido({
+    participante: {
+      ID: result.participanteId,
+      NOMBRE: nombre,
+      TELEFONO: telefono
+    },
+    registro: {
+      ID: result.registroId,
+      NUMERO_FACTURA: numeroFactura,
+      CANTIDAD_PRODUCTOS: cantidadNum
+    }
+  }).catch((e) => {
+    console.error('[NOTIF] notifyRecibido fallo:', e.message);
   });
 
   return {

@@ -162,7 +162,7 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 | `GET` | `/api/premios` | Listar premios de la campanha | - |
 | `GET` | `/api/health` | Health check | - |
 
-### Admin (JWT required, 30 req/min rate limit)
+### Admin (JWT required, 120 req/min rate limit)
 
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
@@ -178,7 +178,24 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 | `GET` | `/api/admin/participantes` | Listar participantes con totales |
 | `GET` | `/api/admin/participantes/:id` | Detalle participante + registros |
 | `GET` | `/api/admin/cupones` | Listar todos los cupones |
+| `GET` | `/api/admin/whatsapp/instancia` | Estado de la instancia Evolution + QR almacenado |
+| `POST` | `/api/admin/whatsapp/instancia/conectar` | Iniciar/refrescar pareo (genera QR) |
+| `POST` | `/api/admin/whatsapp/instancia/desconectar` | Logout del dispositivo vinculado |
+| `GET` | `/api/admin/whatsapp/chats` | Listar chats con ultimo mensaje (paginado) |
+| `GET` | `/api/admin/whatsapp/chats/:chatId/mensajes` | Listar mensajes del chat |
+| `POST` | `/api/admin/whatsapp/chats/:chatId/mensajes` | Enviar mensaje manual al chat |
+| `POST` | `/api/admin/whatsapp/chats/:chatId/leido` | Marcar chat como leido (NO_LEIDOS = 0) |
+| `GET` | `/api/admin/whatsapp/plantillas` | Listar plantillas de notificacion |
+| `PUT` | `/api/admin/whatsapp/plantillas/:codigo` | Actualizar plantilla (texto/nombre/activo) |
+| `POST` | `/api/admin/whatsapp/plantillas/:codigo/preview` | Renderizar plantilla con variables `{{x}}` |
 | `GET` | `/api/uploads/:type/:filename` | Servir imagenes (facturas/productos) |
+
+### WhatsApp Webhook (publico, llamado por Evolution API en localhost)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| `POST` | `/api/whatsapp/webhook` | Recibe eventos `connection.update`, `qrcode.updated`, `messages.upsert` |
+| `POST` | `/api/whatsapp/webhook/*` | Acepta subpath por evento (Evolution v2) |
 
 ### Formato de respuesta
 
@@ -261,6 +278,11 @@ curl -X PUT http://localhost:3001/api/admin/cambiar-password \
 | `ALLWAYS_CUPONES` | Cupones generados (FK → REGISTROS, PARTICIPANTES) |
 | `ALLWAYS_PREMIOS` | Premios mensuales de la campanha |
 | `ALLWAYS_ADMIN_LOG` | Auditoria de acciones administrativas |
+| `ALLWAYS_WA_INSTANCIA` | Estado de la instancia Evolution (1 fila: nombre, estado, QR, ultima conexion) |
+| `ALLWAYS_WA_PLANTILLAS` | Plantillas de mensajes (`RECIBIDO`, `ACEPTADO`, `RECHAZADO`) con variables `{{x}}` |
+| `ALLWAYS_WA_CHATS` | Chats de WhatsApp (FK opcional → PARTICIPANTES, UK: REMOTE_JID) |
+| `ALLWAYS_WA_MENSAJES` | Historial de mensajes IN/OUT (FK → CHATS, REGISTROS, ADMIN) |
+| `ALLWAYS_WA_LOG_NOTIF` | Log de notificaciones automaticas (RECIBIDO/ACEPTADO/RECHAZADO) por registro |
 
 ### Columnas clave
 
@@ -292,14 +314,38 @@ Oracle Instant Client 19.25 configurado en `/usr/lib/oracle/19.25/client64/`.
 4. Si cedula ya existe, se vincula al participante existente
 5. Se crea registro con estado `PENDIENTE` (transaccion Oracle)
 6. Archivos se guardan en `uploads/facturas/` y `uploads/productos/` con nombre UUID
+7. **Notificacion WhatsApp** (fire-and-forget): plantilla `RECIBIDO` al telefono del participante
 
 ### Validacion de Registro (admin)
 1. Admin ve factura en detalle ampliado
 2. **ACEPTAR** → genera N cupones (1 por producto declarado)
    - Formato cupon: `AW-2026-XXXXXX`
    - Mes sorteo: mes actual en espanol
+   - **Notificacion WhatsApp**: plantilla `ACEPTADO` con la lista de cupones y los premios del mes
 3. **RECHAZAR** → requiere motivo obligatorio
+   - **Notificacion WhatsApp**: plantilla `RECHAZADO` con el motivo
 4. Toda accion se registra en `ALLWAYS_ADMIN_LOG`
+
+### WhatsApp / Notificaciones automaticas (Evolution API + Baileys)
+
+Las notificaciones se envian con [Evolution API v2](https://doc.evolution-api.com) corriendo en `localhost:8080` (PM2: `allways-evolution`). Usa `WHATSAPP-BAILEYS` como integracion → un dispositivo vinculado por QR, sin WhatsApp Business API oficial.
+
+**Vinculacion inicial (una sola vez):**
+1. Ir a `/admin/whatsapp` en el panel.
+2. Pulsar **Conectar / QR** → backend llama a `GET /instance/connect/<instance>` y persiste el QR en BD (`ALLWAYS_WA_INSTANCIA.QR_CODE`).
+3. Abrir WhatsApp en el celular de la campana → **Configuracion → Dispositivos vinculados → Vincular un dispositivo** → escanear (QR caduca a ~60s; el polling cada 3s + el evento `qrcode.updated` traen QR nuevo automaticamente).
+4. Cuando llega `connection.update` con `state=open`, el estado pasa a `CONECTADA` y `NUMERO` se popula con el JID propio.
+
+**Eventos manejados (webhook `/api/whatsapp/webhook`):**
+- `connection.update` → upsert estado en `ALLWAYS_WA_INSTANCIA`
+- `qrcode.updated` → guarda nuevo QR en `ALLWAYS_WA_INSTANCIA.QR_CODE`
+- `messages.upsert` → ignora `fromMe` y grupos (`@g.us`); crea/actualiza chat por `REMOTE_JID`, intenta vincular a `ALLWAYS_PARTICIPANTES.TELEFONO`, incrementa `NO_LEIDOS`
+
+**Plantillas:** `ALLWAYS_WA_PLANTILLAS` con codigos `RECIBIDO`, `ACEPTADO`, `RECHAZADO`. Variables soportadas: `{{nombre}}`, `{{numeroFactura}}`, `{{cantidadProductos}}`, `{{cuponesLista}}`, `{{mesActual}}`, `{{premiosMes}}`, `{{motivo}}`. El admin puede editar y previsualizar desde la UI.
+
+**Normalizacion telefono** (`backend/src/utils/phone.js`): elimina no-digitos, soporta prefijo `00`, antepone `595` si falta. JID = `<numero>@s.whatsapp.net`.
+
+**Auditoria:** cada intento de notificacion automatica deja una fila en `ALLWAYS_WA_LOG_NOTIF` con `EXITOSO=S/N` y `ERROR_DETALLE` (response cruda de Evolution truncada a 1900 chars). Las fallas NUNCA abortan el flujo de registro/validacion (try/catch fire-and-forget).
 
 ### Consulta de Cupones (publico)
 - Busqueda por cedula → lista cupones con estado y mes de sorteo
@@ -330,6 +376,10 @@ Oracle Instant Client 19.25 configurado en `/usr/lib/oracle/19.25/client64/`.
 | `UPLOAD_DIR` | Directorio de uploads | `./uploads` |
 | `ADMIN_USERNAME` | Usuario admin inicial | `admin` |
 | `ADMIN_PASSWORD` | Password admin inicial | `***` |
+| `EVOLUTION_API_URL` | URL de Evolution API (Baileys) | `http://localhost:8080` |
+| `EVOLUTION_API_KEY` | API key global de Evolution | `***` |
+| `EVOLUTION_INSTANCE_NAME` | Nombre de la instancia | `allways-campana` |
+| `EVOLUTION_DEFAULT_COUNTRY_CODE` | Codigo de pais para normalizacion | `595` |
 
 ### Nginx
 

@@ -3,6 +3,7 @@
 const db = require('../config/database');
 const queries = require('../models/queries');
 const couponService = require('../services/couponService');
+const notificationService = require('../services/notificationService');
 
 /**
  * GET /api/admin/registros
@@ -205,6 +206,21 @@ async function validarRegistro(req, res, next) {
         : `Registro #${registroId} rechazado. Motivo: ${motivoRechazo}`,
       ip: req.ip || null
     });
+
+    // Fire-and-forget WhatsApp notification
+    if (isApproving) {
+      notificationService.notifyAceptado({
+        participante: registro,
+        registro,
+        cupones
+      }).catch((e) => console.error('[NOTIF] notifyAceptado fallo:', e.message));
+    } else {
+      notificationService.notifyRechazado({
+        participante: registro,
+        registro,
+        motivo: motivoRechazo
+      }).catch((e) => console.error('[NOTIF] notifyRechazado fallo:', e.message));
+    }
 
     return res.json({
       success: true,

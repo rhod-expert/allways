@@ -11,6 +11,7 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/uploads');
+const whatsappRoutes = require('./routes/whatsapp');
 
 const app = express();
 
@@ -81,6 +82,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api', publicRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
 
 // ---- 404 Handler ----
 app.use(notFoundHandler);
