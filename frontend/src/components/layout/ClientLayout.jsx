@@ -120,8 +120,13 @@ export default function ClientLayout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-white/10 py-4 text-center text-xs text-gray-500">
-        Allways Show de Premios &middot; San Jose Import Export S.A.
+      <footer className="border-t border-white/10 py-4 text-center space-y-1.5">
+        <p className="text-[11px] uppercase tracking-wider text-allways-gold/80 font-semibold px-4">
+          Certificado de Autorizacion CONAJZAR N&deg; 186 de fecha 04 de mayo del 2026
+        </p>
+        <p className="text-xs text-gray-500">
+          Allways Show de Premios &middot; San Jose Import Export S.A.
+        </p>
       </footer>
 
       <PWAInstallPrompt />
