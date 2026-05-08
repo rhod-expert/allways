@@ -118,8 +118,15 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* CONAJZAR authorization (legal requirement for sweepstakes in Paraguay) */}
+        <div className="mt-10 pt-6 border-t border-white/10">
+          <p className="text-center text-[11px] sm:text-xs uppercase tracking-wider text-allways-gold/80 font-semibold">
+            Certificado de Autorizacion CONAJZAR N&deg; 186 de fecha 04 de mayo del 2026
+          </p>
+        </div>
+
         {/* Bottom bar */}
-        <div className="mt-10 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-4 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-gray-500 text-xs text-center">
             &copy; 2026 San Jose Import Export S.A. Todos los derechos reservados.
           </p>
