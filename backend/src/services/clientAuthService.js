@@ -237,6 +237,13 @@ async function resetPassword({ token, password, password2, ip, userAgent }) {
     await conn.execute(queries.TOKEN_INVALIDATE_ALL_FOR, {
       participanteId: row.PARTICIPANTE_ID, tipo: 'SETUP'
     });
+    // Wipe every active JWT session — if an attacker triggered the reset
+    // (e.g., took the magic link), they don't get to keep their stolen
+    // session. Legit user just logs in again.
+    await conn.execute(
+      'UPDATE ALLWAYS_PARTICIPANTES SET TOKENS_VALID_SINCE = :now WHERE ID = :id',
+      { id: row.PARTICIPANTE_ID, now: new Date() }
+    );
   });
 
   await logEvent({ participanteId: row.PARTICIPANTE_ID, evento: 'RESET_PASSWORD', exitoso: true, ip, userAgent });
@@ -276,9 +283,16 @@ async function changePassword({ participanteId, actual, nueva, nueva2, ip, userA
     throw Object.assign(new Error('Contrasena actual incorrecta.'), { statusCode: 401 });
   }
   const hash = await bcrypt.hash(nueva, 12);
-  await db.execute(queries.CLIENTE_SET_PASSWORD, {
-    id: participanteId, passwordHash: hash, email: null
-  }, { autoCommit: true });
+  await db.executeTransaction(async (conn) => {
+    await conn.execute(queries.CLIENTE_SET_PASSWORD, {
+      id: participanteId, passwordHash: hash, email: null
+    });
+    // Force re-login on every device (including the one we're on — UI handles it)
+    await conn.execute(
+      'UPDATE ALLWAYS_PARTICIPANTES SET TOKENS_VALID_SINCE = :now WHERE ID = :id',
+      { id: participanteId, now: new Date() }
+    );
+  });
 
   await logEvent({ participanteId, evento: 'CHANGE_PASSWORD', exitoso: true, ip, userAgent });
 
@@ -345,6 +359,29 @@ async function dispatchResetMagicLink({ cedula, ipSolicitud }) {
   }
 }
 
+/**
+ * Revoke every active session for a participante.
+ *
+ * Uses Node's clock (not Oracle's) so the timestamp is consistent with
+ * JWT iat values (which are also derived from Node's clock when tokens
+ * are signed here). Avoids issues if the DB and app servers have any
+ * clock skew between them.
+ */
+async function revokeAllSessions({ participanteId, ip, userAgent, reason = 'manual' }) {
+  await db.execute(
+    'UPDATE ALLWAYS_PARTICIPANTES SET TOKENS_VALID_SINCE = :now WHERE ID = :id',
+    { id: participanteId, now: new Date() },
+    { autoCommit: true }
+  );
+  await logEvent({
+    participanteId,
+    evento: 'REVOKE_ALL_SESSIONS',
+    exitoso: true,
+    detalle: reason,
+    ip, userAgent
+  });
+}
+
 module.exports = {
   login,
   setupPassword,
@@ -357,5 +394,6 @@ module.exports = {
   validateEmail,
   logEvent,
   issueToken,
-  consumeToken
+  consumeToken,
+  revokeAllSessions
 };

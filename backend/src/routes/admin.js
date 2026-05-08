@@ -40,6 +40,7 @@ router.put('/registros/:id/validar', adminController.validarRegistro);
 // ---- Participantes ----
 router.get('/participantes', adminController.listParticipantes);
 router.get('/participantes/:id', adminController.getParticipante);
+router.post('/participantes/:id/revocar-sesiones', adminController.revocarSesionesParticipante);
 
 // ---- Cupones ----
 router.get('/cupones', couponController.listCupones);

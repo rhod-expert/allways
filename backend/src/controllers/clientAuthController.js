@@ -48,6 +48,20 @@ async function logout(req, res) {
   return res.json({ success: true });
 }
 
+async function logoutEverywhere(req, res, next) {
+  try {
+    await clientAuth.revokeAllSessions({
+      participanteId: req.cliente.sub,
+      reason: 'self:logout-everywhere',
+      ...reqMeta(req)
+    });
+    return res.json({
+      success: true,
+      message: 'Todas las sesiones fueron cerradas. Inicia sesion nuevamente.'
+    });
+  } catch (err) { next(err); }
+}
+
 async function recuperarPassword(req, res) {
   // Always returns 200 with a generic message — anti-enumeration.
   const { cedula } = req.body || {};
@@ -168,6 +182,7 @@ async function getCupones(req, res, next) {
 module.exports = {
   login,
   logout,
+  logoutEverywhere,
   recuperarPassword,
   setupPassword,
   resetPassword,

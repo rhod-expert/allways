@@ -31,6 +31,7 @@ router.use(verifyClientToken);
 router.use(clientApiLimiter);
 
 router.post('/logout', ctrl.logout);
+router.post('/logout-everywhere', ctrl.logoutEverywhere);
 router.get('/me', ctrl.getMe);
 router.get('/registros', ctrl.getRegistros);
 router.get('/cupones', ctrl.getCupones);

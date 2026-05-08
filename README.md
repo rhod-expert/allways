@@ -177,6 +177,7 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 | `PUT` | `/api/admin/registros/:id/validar` | Aceptar o rechazar registro |
 | `GET` | `/api/admin/participantes` | Listar participantes con totales |
 | `GET` | `/api/admin/participantes/:id` | Detalle participante + registros |
+| `POST` | `/api/admin/participantes/:id/revocar-sesiones` | Invalida todas las sesiones JWT activas del cliente |
 | `GET` | `/api/admin/cupones` | Listar todos los cupones |
 | `GET` | `/api/admin/whatsapp/instancia` | Estado de la instancia Evolution + QR almacenado |
 | `POST` | `/api/admin/whatsapp/instancia/conectar` | Iniciar/refrescar pareo (genera QR) |
@@ -205,6 +206,7 @@ Login: 5 intentos / 15 min por IP. Recuperación: 3 / hora por IP. API autentica
 | `GET`  | `/api/cliente/cupones` | Mis cupones + premios del mes vigente + totales (auth) |
 | `POST` | `/api/cliente/password/cambiar` | Cambio autenticado (actual + nueva) |
 | `POST` | `/api/cliente/logout` | Logout (drop client-side, log audit) |
+| `POST` | `/api/cliente/logout-everywhere` | Cierra todas las sesiones del cliente en todos los dispositivos |
 
 ### WhatsApp Webhook (publico, llamado por Evolution API en localhost)
 

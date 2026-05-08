@@ -339,10 +339,33 @@ async function getParticipante(req, res, next) {
   }
 }
 
+/**
+ * POST /api/admin/participantes/:id/revocar-sesiones
+ * Wipes every active cliente session for the participant.
+ * Used after a confirmed credential leak / account takeover report.
+ */
+async function revocarSesionesParticipante(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'ID invalido.' });
+    }
+    const clientAuth = require('../services/clientAuthService');
+    await clientAuth.revokeAllSessions({
+      participanteId: id,
+      ip: req.ip || null,
+      userAgent: (req.get('user-agent') || '').slice(0, 300),
+      reason: `admin:${req.admin?.username || req.admin?.id || 'unknown'}`
+    });
+    return res.json({ success: true, message: 'Sesiones del cliente revocadas.' });
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   listRegistros,
   getRegistro,
   validarRegistro,
   listParticipantes,
-  getParticipante
+  getParticipante,
+  revocarSesionesParticipante
 };
