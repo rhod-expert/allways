@@ -19,7 +19,10 @@ async function verify(token, remoteIp) {
         response: token,
         remoteip: remoteIp
       },
-      timeout: 5000
+      // 15s gives margin on slow PY networks. Google itself responds in <2s
+      // in normal conditions; the longer timeout only matters when something
+      // is wrong upstream (DNS, ISP route, etc.).
+      timeout: 15000
     });
 
     const data = response.data;

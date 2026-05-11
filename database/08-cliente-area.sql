@@ -164,6 +164,30 @@ END;
 /
 
 -- ------------------------------------------------------------
+-- 4c. Extend TIPO check constraint to allow the new auth notification
+--     types (SETUP_PASSWORD, RECUPERAR_PASSWORD, PASSWORD_CAMBIADA).
+-- ------------------------------------------------------------
+DECLARE
+  e_nonexistent EXCEPTION;
+  PRAGMA EXCEPTION_INIT(e_nonexistent, -2443);
+BEGIN
+  EXECUTE IMMEDIATE 'ALTER TABLE ALLWAYS_WA_LOG_NOTIF DROP CONSTRAINT CK_WA_NOTIF_TIPO';
+EXCEPTION
+  WHEN e_nonexistent THEN NULL;
+END;
+/
+
+DECLARE
+  e_exists EXCEPTION;
+  PRAGMA EXCEPTION_INIT(e_exists, -2264);
+BEGIN
+  EXECUTE IMMEDIATE 'ALTER TABLE ALLWAYS_WA_LOG_NOTIF ADD CONSTRAINT CK_WA_NOTIF_TIPO CHECK (TIPO IN (''RECIBIDO'',''ACEPTADO'',''RECHAZADO'',''SETUP_PASSWORD'',''RECUPERAR_PASSWORD'',''PASSWORD_CAMBIADA''))';
+EXCEPTION
+  WHEN e_exists THEN NULL;
+END;
+/
+
+-- ------------------------------------------------------------
 -- 5. New WhatsApp templates
 --    Insert-or-update so re-runs are safe.
 -- ------------------------------------------------------------
