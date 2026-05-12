@@ -119,6 +119,33 @@ async function executeMany(sql, binds = [], options = {}) {
 }
 
 /**
+ * Wrap a connection so that any .execute() call inside a transaction
+ * defaults to autoCommit:false, even when the global default is true.
+ *
+ * This is the fix for a previous footgun: the global `oracledb.autoCommit = true`
+ * meant individual conn.execute() calls inside an executeTransaction callback
+ * would auto-commit independently — making the wrapping commit/rollback
+ * useless. Callers that explicitly pass `{ autoCommit: true }` per call still
+ * win, but the default inside a transaction is now correctly false.
+ */
+function wrapConnectionForTransaction(conn) {
+  return new Proxy(conn, {
+    get(target, prop) {
+      if (prop === 'execute') {
+        return (sql, binds = {}, opts = {}) =>
+          target.execute(sql, binds, { autoCommit: false, ...opts });
+      }
+      if (prop === 'executeMany') {
+        return (sql, binds = [], opts = {}) =>
+          target.executeMany(sql, binds, { autoCommit: false, ...opts });
+      }
+      const v = target[prop];
+      return typeof v === 'function' ? v.bind(target) : v;
+    }
+  });
+}
+
+/**
  * Execute multiple statements in a transaction
  * @param {function} callback - Receives connection, must return result
  * @returns {*} Result from callback
@@ -127,7 +154,8 @@ async function executeTransaction(callback) {
   let connection;
   try {
     connection = await oracledb.getConnection('default');
-    const result = await callback(connection);
+    const txnConn = wrapConnectionForTransaction(connection);
+    const result = await callback(txnConn);
     await connection.commit();
     return result;
   } catch (err) {
