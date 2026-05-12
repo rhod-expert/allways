@@ -26,15 +26,19 @@ const { spawn, execSync } = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
 const ENV_FILE = path.join(ROOT, 'backend', '.env');
 const BACKUPS_BASE = path.join(ROOT, 'backups', 'diarios');
-const RETENTION_DAYS = 30;
 
-// Load backend .env
+// Load backend .env BEFORE reading any env-driven constant.
 if (fs.existsSync(ENV_FILE)) {
   for (const line of fs.readFileSync(ENV_FILE, 'utf8').split('\n')) {
     const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
     if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
   }
 }
+
+// Local retention. Override with BACKUP_RETENTION_DAYS env var. Remote
+// retention is governed by the rsync target's --delete-after policy
+// (so removing rows here propagates to off-site mirror).
+const RETENTION_DAYS = parseInt(process.env.BACKUP_RETENTION_DAYS, 10) || 30;
 
 const oracledb = require(path.join(ROOT, 'backend', 'node_modules', 'oracledb'));
 oracledb.initOracleClient({ configDir: '/usr/lib/oracle/19.25/client64/lib/network/admin' });
