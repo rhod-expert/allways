@@ -85,10 +85,17 @@ async function dumpAllwaysSchema(outPath) {
   const file = fs.createWriteStream(outPath);
   gz.pipe(file);
 
+  // Register error handler ONCE — previously `gz.once('error', reject)` inside
+  // writeLine added a listener per call and tripped MaxListenersExceededWarning
+  // after ~10 writes. Now any future write fails fast if gz already errored.
+  let gzError = null;
+  gz.on('error', (e) => { gzError = e; });
+  file.on('error', (e) => { gzError = gzError || e; });
+
   const writeLine = (s) => new Promise((resolve, reject) => {
+    if (gzError) return reject(gzError);
     if (gz.write(s + '\n')) resolve();
     else gz.once('drain', resolve);
-    gz.once('error', reject);
   });
 
   await writeLine(`-- Allways Oracle daily backup`);
@@ -270,8 +277,68 @@ function offsiteRsync(srcDir) {
   pruneOld();
   manifest.offsite = offsiteRsync(BACKUPS_BASE);
   fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2));
-})().catch((e) => {
+
+  await alertOnFailure(manifest);
+})().catch(async (e) => {
   err('FATAL:', e.message);
   console.error(e);
+  // Best-effort alert on catastrophic failure
+  try {
+    await alertOnFailure({
+      stamp: todayStamp(),
+      artifacts: { fatal: { error: e.message } }
+    });
+  } catch {}
   process.exit(1);
 });
+
+/**
+ * Scan manifest for errors. If any exist and BACKUP_ALERT_PHONE is set,
+ * send a WhatsApp via the same Evolution API used by the app. Best-effort:
+ * a failure to alert is logged but does not affect backup exit status.
+ *
+ * Configure via .env:
+ *   BACKUP_ALERT_PHONE=595XXXXXXXXX
+ *   EVOLUTION_API_URL, EVOLUTION_API_KEY, EVOLUTION_INSTANCE_NAME (already set)
+ */
+function collectErrors(manifest) {
+  const out = [];
+  for (const [name, art] of Object.entries(manifest.artifacts || {})) {
+    if (art && art.error) out.push(`X ${name}: ${String(art.error).slice(0, 200)}`);
+    else if (art && art.skipped && !art.ok) out.push(`! ${name}: skipped`);
+  }
+  if (manifest.offsite && manifest.offsite.error) {
+    out.push(`X offsite: ${String(manifest.offsite.error).slice(0, 200)}`);
+  }
+  return out;
+}
+
+async function alertOnFailure(manifest) {
+  const phone = process.env.BACKUP_ALERT_PHONE;
+  if (!phone) { log('BACKUP_ALERT_PHONE no configurado, alerting deshabilitado.'); return; }
+
+  const errors = collectErrors(manifest);
+  if (errors.length === 0) { log('Backup sin errores, no alert.'); return; }
+
+  const url = (process.env.EVOLUTION_API_URL || 'http://localhost:8080').replace(/\/$/, '');
+  const apikey = process.env.EVOLUTION_API_KEY;
+  const instance = process.env.EVOLUTION_INSTANCE_NAME || 'allways-campana';
+  if (!apikey) { err('EVOLUTION_API_KEY no configurada, no se puede alertar.'); return; }
+
+  const text =
+    `*Backup ${manifest.stamp || todayStamp()} con errores*\n\n` +
+    errors.join('\n') +
+    `\n\nLog: /var/log/allways-backup.log`;
+
+  try {
+    const axios = require(path.join(ROOT, 'backend', 'node_modules', 'axios'));
+    await axios.post(
+      `${url}/message/sendText/${instance}`,
+      { number: phone, text },
+      { headers: { apikey }, timeout: 10000 }
+    );
+    log(`Alert WhatsApp enviada a ${phone} (${errors.length} error${errors.length === 1 ? '' : 'es'}).`);
+  } catch (e) {
+    err('No se pudo enviar alert WhatsApp:', e.message);
+  }
+}

@@ -663,6 +663,32 @@ Las tablas `ALLWAYS_ADMIN_LOG`, `ALLWAYS_CLIENTE_LOG` y `ALLWAYS_WA_LOG_NOTIF` c
 0 4 * * 0  /usr/bin/node /var/www/html/allways/scripts/purge-old-logs.js >> /var/log/allways-purge.log 2>&1
 ```
 
+### Backups
+
+| Archivo | Función |
+|---|---|
+| `scripts/backup-daily.js` | Dump Oracle (logical SQL) + uploads tar + Evolution Postgres + Redis RDB |
+| `scripts/verify-backup.js` | Verificación: gunzip + cuenta INSERTs por tabla vs manifest |
+
+**Variables `.env`:**
+| Variable | Default | Uso |
+|---|---|---|
+| `BACKUP_RETENTION_DAYS` | `30` | Días de retención local (y por extensión, off-site) |
+| `RSYNC_TARGET` | — | Destino off-site (`user@host:/path`). Sin valor = no off-site |
+| `RSYNC_SSH_OPTS` | — | Opciones SSH (ej: `-p 2809` para puerto custom) |
+| `RSYNC_OPTS` | `-az --delete-after` | Flags de rsync |
+| `BACKUP_ALERT_PHONE` | — | Teléfono para alerts WhatsApp cuando backup/verify falla |
+
+**Cron recomendado:**
+```cron
+# Backup diario 03:00 (local + off-site)
+0 3 * * *      /usr/bin/node /var/www/html/allways/scripts/backup-daily.js >> /var/log/allways-backup.log 2>&1
+# Verificación: primer domingo de cada mes, 04:00
+0 4 1-7 * 0    /usr/bin/node /var/www/html/allways/scripts/verify-backup.js --latest >> /var/log/allways-verify.log 2>&1
+```
+
+**Alerting:** si cualquier artefacto del backup falla, o si `verify-backup.js` detecta un mismatch, se envía un WhatsApp al `BACKUP_ALERT_PHONE` vía la misma instancia Evolution que usan las notificaciones del cliente. Si Evolution está caído, el error queda en `/var/log/allways-backup.log` (no se pierde, solo no llega push).
+
 ---
 
 ## Premios Mensuales (30 premios — Mayo a Noviembre 2026)
