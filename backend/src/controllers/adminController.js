@@ -238,6 +238,69 @@ async function validarRegistro(req, res, next) {
 }
 
 /**
+ * PUT /api/admin/registros/:id
+ * Edit a pending registration's invoice data before approving.
+ * Only fields the admin can correct based on the picture: factura number,
+ * product count, store, seller. Restricted to PENDIENTE state.
+ */
+async function editarRegistro(req, res, next) {
+  try {
+    const registroId = parseInt(req.params.id, 10);
+    if (Number.isNaN(registroId)) {
+      return res.status(400).json({ success: false, message: 'ID invalido.' });
+    }
+
+    const { numeroFactura, cantidadProductos, tienda, vendedor } = req.body || {};
+
+    const numero = (numeroFactura || '').toString().trim();
+    if (!numero) {
+      return res.status(400).json({ success: false, message: 'El numero de factura es obligatorio.' });
+    }
+    const cantidad = parseInt(cantidadProductos, 10);
+    if (Number.isNaN(cantidad) || cantidad < 1 || cantidad > 999) {
+      return res.status(400).json({ success: false, message: 'La cantidad de productos debe ser un entero entre 1 y 999.' });
+    }
+
+    const found = await db.execute(queries.REGISTRO_FIND_BY_ID, { id: registroId });
+    const registro = found.rows && found.rows[0];
+    if (!registro) {
+      return res.status(404).json({ success: false, message: 'Registro no encontrado.' });
+    }
+    if (registro.ESTADO !== 'PENDIENTE') {
+      return res.status(400).json({
+        success: false,
+        message: `Solo se pueden editar registros pendientes (estado actual: ${registro.ESTADO}).`
+      });
+    }
+
+    await db.execute(queries.REGISTRO_UPDATE_FIELDS, {
+      numeroFactura: numero,
+      cantidadProductos: cantidad,
+      tienda: (tienda || '').toString().trim() || null,
+      vendedor: (vendedor || '').toString().trim() || null,
+      id: registroId
+    }, { autoCommit: true });
+
+    const diffs = [];
+    if (registro.NUMERO_FACTURA !== numero) diffs.push(`factura ${registro.NUMERO_FACTURA} -> ${numero}`);
+    if (registro.CANTIDAD_PRODUCTOS !== cantidad) diffs.push(`cantidad ${registro.CANTIDAD_PRODUCTOS} -> ${cantidad}`);
+    if ((registro.TIENDA || null) !== ((tienda || '').toString().trim() || null)) diffs.push(`tienda "${registro.TIENDA || ''}" -> "${tienda || ''}"`);
+    if ((registro.VENDEDOR || null) !== ((vendedor || '').toString().trim() || null)) diffs.push(`vendedor "${registro.VENDEDOR || ''}" -> "${vendedor || ''}"`);
+
+    await db.execute(queries.ADMIN_LOG_INSERT, {
+      adminId: req.admin.id,
+      accion: 'EDITAR_REGISTRO',
+      detalle: `Registro #${registroId} editado. ${diffs.length ? diffs.join('; ') : 'sin cambios'}`,
+      ip: req.ip || null
+    });
+
+    return res.json({ success: true, message: 'Registro actualizado.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
  * GET /api/admin/participantes
  * List all participants with pagination.
  */
@@ -365,6 +428,7 @@ module.exports = {
   listRegistros,
   getRegistro,
   validarRegistro,
+  editarRegistro,
   listParticipantes,
   getParticipante,
   revocarSesionesParticipante

@@ -19,6 +19,8 @@ import {
   Home,
   Store,
   UserSquare,
+  Pencil,
+  Save,
 } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
@@ -38,6 +40,14 @@ export default function ClientDetailPage() {
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
   const [zoomImage, setZoomImage] = useState(null)
+  const [editing, setEditing] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [editForm, setEditForm] = useState({
+    numeroFactura: '',
+    cantidadProductos: '',
+    tienda: '',
+    vendedor: '',
+  })
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -65,6 +75,54 @@ export default function ClientDetailPage() {
       toast.error('Error al aceptar el registro')
     } finally {
       setActionLoading(false)
+    }
+  }
+
+  const startEdit = () => {
+    setEditForm({
+      numeroFactura: registration.NUMERO_FACTURA || '',
+      cantidadProductos: String(registration.CANTIDAD_PRODUCTOS ?? '1'),
+      tienda: registration.TIENDA || '',
+      vendedor: registration.VENDEDOR || '',
+    })
+    setEditing(true)
+  }
+
+  const cancelEdit = () => {
+    setEditing(false)
+  }
+
+  const handleSaveEdit = async () => {
+    const cantidad = parseInt(editForm.cantidadProductos, 10)
+    if (!editForm.numeroFactura.trim()) {
+      toast.error('El numero de factura es obligatorio')
+      return
+    }
+    if (Number.isNaN(cantidad) || cantidad < 1 || cantidad > 999) {
+      toast.error('Cantidad de productos invalida (1-999)')
+      return
+    }
+    setSavingEdit(true)
+    try {
+      await put(`/admin/registros/${id}`, {
+        numeroFactura: editForm.numeroFactura.trim(),
+        cantidadProductos: cantidad,
+        tienda: editForm.tienda.trim(),
+        vendedor: editForm.vendedor.trim(),
+      })
+      setRegistration((prev) => ({
+        ...prev,
+        NUMERO_FACTURA: editForm.numeroFactura.trim(),
+        CANTIDAD_PRODUCTOS: cantidad,
+        TIENDA: editForm.tienda.trim() || null,
+        VENDEDOR: editForm.vendedor.trim() || null,
+      }))
+      setEditing(false)
+      toast.success('Registro actualizado')
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Error al guardar')
+    } finally {
+      setSavingEdit(false)
     }
   }
 
@@ -138,6 +196,7 @@ export default function ClientDetailPage() {
               variant="green"
               onClick={handleAccept}
               loading={actionLoading}
+              disabled={editing}
               className="flex-1 !py-3"
             >
               <CheckCircle size={18} />
@@ -146,13 +205,18 @@ export default function ClientDetailPage() {
             <Button
               variant="red"
               onClick={() => setRejectModalOpen(true)}
-              disabled={actionLoading}
+              disabled={actionLoading || editing}
               className="flex-1 !py-3"
             >
               <XCircle size={18} />
               RECHAZAR
             </Button>
           </div>
+          {editing && (
+            <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 mt-2 text-center">
+              Guardá o cancelá la edición primero
+            </p>
+          )}
         </div>
       )}
 
@@ -241,33 +305,86 @@ export default function ClientDetailPage() {
             transition={{ delay: 0.1 }}
             className="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100"
           >
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 sm:mb-4">Datos de la Factura</h3>
-            <div className="space-y-3">
-              <InfoRow icon={FileText} label="Numero de factura" value={registration.NUMERO_FACTURA} mono />
-              <div className="flex items-center gap-3">
-                <Package size={16} className="text-gray-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-400">Cantidad de productos</p>
-                  <p className="font-bold text-xl sm:text-2xl text-allways-blue">{registration.CANTIDAD_PRODUCTOS}</p>
-                </div>
-              </div>
-              <InfoRow icon={Store} label="Tienda / Punto de venta" value={registration.TIENDA || '-'} />
-              <InfoRow icon={UserSquare} label="Vendedor" value={registration.VENDEDOR || '-'} />
-              <InfoRow
-                icon={Calendar}
-                label="Fecha de registro"
-                value={registration.FECHA_REGISTRO
-                  ? new Date(registration.FECHA_REGISTRO).toLocaleString('es-PY')
-                  : '-'}
-                small
-              />
-              {registration.MOTIVO_RECHAZO && (
-                <div className="mt-3 p-3 bg-red-50 rounded-xl border border-red-200">
-                  <p className="text-xs text-red-400 font-semibold mb-1">Motivo de rechazo:</p>
-                  <p className="text-sm text-red-700">{registration.MOTIVO_RECHAZO}</p>
-                </div>
+            <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Datos de la Factura</h3>
+              {registration.ESTADO === 'PENDIENTE' && !editing && (
+                <button
+                  onClick={startEdit}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-allways-blue hover:underline"
+                >
+                  <Pencil size={12} /> Editar
+                </button>
               )}
             </div>
+            {editing ? (
+              <div className="space-y-3">
+                <EditField
+                  icon={FileText}
+                  label="Numero de factura"
+                  value={editForm.numeroFactura}
+                  onChange={(v) => setEditForm((p) => ({ ...p, numeroFactura: v }))}
+                  mono
+                />
+                <EditField
+                  icon={Package}
+                  label="Cantidad de productos"
+                  value={editForm.cantidadProductos}
+                  onChange={(v) => setEditForm((p) => ({ ...p, cantidadProductos: v.replace(/\D/g, '') }))}
+                  inputMode="numeric"
+                  emphasize
+                />
+                <EditField
+                  icon={Store}
+                  label="Tienda / Punto de venta"
+                  value={editForm.tienda}
+                  onChange={(v) => setEditForm((p) => ({ ...p, tienda: v }))}
+                />
+                <EditField
+                  icon={UserSquare}
+                  label="Vendedor"
+                  value={editForm.vendedor}
+                  onChange={(v) => setEditForm((p) => ({ ...p, vendedor: v }))}
+                />
+                <div className="flex gap-2 pt-2">
+                  <Button variant="green" onClick={handleSaveEdit} loading={savingEdit} className="flex-1">
+                    <Save size={16} /> Guardar
+                  </Button>
+                  <Button variant="ghost" onClick={cancelEdit} disabled={savingEdit} className="!text-gray-600">
+                    Cancelar
+                  </Button>
+                </div>
+                <p className="text-[11px] text-gray-400 leading-snug">
+                  Corregí los datos según la factura antes de Aceptar. Los cupones se generarán según la cantidad final.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <InfoRow icon={FileText} label="Numero de factura" value={registration.NUMERO_FACTURA} mono />
+                <div className="flex items-center gap-3">
+                  <Package size={16} className="text-gray-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-gray-400">Cantidad de productos</p>
+                    <p className="font-bold text-xl sm:text-2xl text-allways-blue">{registration.CANTIDAD_PRODUCTOS}</p>
+                  </div>
+                </div>
+                <InfoRow icon={Store} label="Tienda / Punto de venta" value={registration.TIENDA || '-'} />
+                <InfoRow icon={UserSquare} label="Vendedor" value={registration.VENDEDOR || '-'} />
+                <InfoRow
+                  icon={Calendar}
+                  label="Fecha de registro"
+                  value={registration.FECHA_REGISTRO
+                    ? new Date(registration.FECHA_REGISTRO).toLocaleString('es-PY')
+                    : '-'}
+                  small
+                />
+                {registration.MOTIVO_RECHAZO && (
+                  <div className="mt-3 p-3 bg-red-50 rounded-xl border border-red-200">
+                    <p className="text-xs text-red-400 font-semibold mb-1">Motivo de rechazo:</p>
+                    <p className="text-sm text-red-700">{registration.MOTIVO_RECHAZO}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </motion.div>
 
           {/* Desktop: action buttons */}
@@ -284,6 +401,7 @@ export default function ClientDetailPage() {
                   variant="green"
                   onClick={handleAccept}
                   loading={actionLoading}
+                  disabled={editing}
                   className="flex-1"
                 >
                   <CheckCircle size={18} />
@@ -292,13 +410,18 @@ export default function ClientDetailPage() {
                 <Button
                   variant="red"
                   onClick={() => setRejectModalOpen(true)}
-                  disabled={actionLoading}
+                  disabled={actionLoading || editing}
                   className="flex-1"
                 >
                   <XCircle size={18} />
                   RECHAZAR
                 </Button>
               </div>
+              {editing && (
+                <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 mt-3 text-center">
+                  Guardá o cancelá la edición primero
+                </p>
+              )}
             </motion.div>
           )}
         </div>
@@ -541,6 +664,26 @@ function InfoRow({ icon: Icon, label, value, mono, small }) {
         <p className={`text-gray-800 truncate ${mono ? 'font-mono font-semibold' : small ? 'text-sm' : 'font-semibold'}`}>
           {value}
         </p>
+      </div>
+    </div>
+  )
+}
+
+function EditField({ icon: Icon, label, value, onChange, mono, inputMode, emphasize }) {
+  return (
+    <div className="flex items-start gap-3">
+      <Icon size={16} className="text-gray-400 flex-shrink-0 mt-2" />
+      <div className="min-w-0 flex-1">
+        <label className="text-xs text-gray-400 block mb-1">{label}</label>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          inputMode={inputMode}
+          className={`w-full px-3 py-1.5 border-2 border-gray-200 rounded-lg outline-none focus:border-allways-blue text-gray-800 ${
+            mono ? 'font-mono font-semibold' : 'font-semibold'
+          } ${emphasize ? 'text-xl sm:text-2xl text-allways-blue !py-2' : 'text-sm'}`}
+        />
       </div>
     </div>
   )

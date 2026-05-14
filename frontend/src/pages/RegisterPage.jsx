@@ -7,6 +7,7 @@ import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import ImageDropzone from '../components/form/ImageDropzone'
+import WhatsAppSAC from '../components/ui/WhatsAppSAC'
 import useApi from '../hooks/useApi'
 import useGeo from '../hooks/useGeo'
 import { validateRegistrationForm } from '../utils/validators'
@@ -539,6 +540,7 @@ export default function RegisterPage() {
           </div>
         </div>
       </Modal>
+      <WhatsAppSAC />
     </section>
   )
 }

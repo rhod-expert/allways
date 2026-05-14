@@ -160,6 +160,15 @@ const REGISTRO_UPDATE_ESTADO = `
   WHERE ID = :id
 `;
 
+const REGISTRO_UPDATE_FIELDS = `
+  UPDATE ALLWAYS_REGISTROS SET
+    NUMERO_FACTURA = :numeroFactura,
+    CANTIDAD_PRODUCTOS = :cantidadProductos,
+    TIENDA = :tienda,
+    VENDEDOR = :vendedor
+  WHERE ID = :id AND ESTADO = 'PENDIENTE'
+`;
+
 // ============================================================
 // ALLWAYS_CUPONES
 // ============================================================
@@ -704,6 +713,7 @@ module.exports = {
   REGISTRO_LIST,
   REGISTRO_LIST_COUNT,
   REGISTRO_UPDATE_ESTADO,
+  REGISTRO_UPDATE_FIELDS,
   CUPON_INSERT,
   CUPON_FIND_BY_CODIGO,
   CUPON_LIST_BY_CEDULA,

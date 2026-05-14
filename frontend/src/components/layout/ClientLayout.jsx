@@ -3,6 +3,7 @@ import { LayoutDashboard, FileText, LogOut, Menu, X, User } from 'lucide-react'
 import { useState } from 'react'
 import useClientAuth from '../../hooks/useClientAuth'
 import PWAInstallPrompt from '../PWAInstallPrompt'
+import WhatsAppSAC from '../ui/WhatsAppSAC'
 
 const navLinks = [
   { to: '/cliente/dashboard', label: 'Mis Cupones', icon: LayoutDashboard },
@@ -130,6 +131,7 @@ export default function ClientLayout() {
       </footer>
 
       <PWAInstallPrompt />
+      <WhatsAppSAC />
     </div>
   )
 }

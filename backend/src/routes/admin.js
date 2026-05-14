@@ -36,6 +36,7 @@ router.get('/dashboard/mapa', dashboardController.getMapaData);
 router.get('/registros', adminController.listRegistros);
 router.get('/registros/:id', adminController.getRegistro);
 router.put('/registros/:id/validar', adminController.validarRegistro);
+router.put('/registros/:id', adminController.editarRegistro);
 
 // ---- Participantes ----
 router.get('/participantes', adminController.listParticipantes);
