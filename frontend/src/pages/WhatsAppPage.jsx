@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MessageCircle, Smartphone, FileText, RefreshCw, Send, Power, QrCode, Wifi, WifiOff, Save, Eye } from 'lucide-react'
+import { MessageCircle, Smartphone, FileText, RefreshCw, Send, Power, QrCode, Wifi, WifiOff, Save, Eye, ArrowLeft } from 'lucide-react'
 import { toast } from 'react-toastify'
 import useApi from '../hooks/useApi'
 import Spinner from '../components/ui/Spinner'
@@ -198,6 +198,9 @@ function ChatsTab() {
   const [enviando, setEnviando] = useState(false)
   const [loadingChats, setLoadingChats] = useState(true)
   const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null)
+  const lastMensajeIdRef = useRef(null)
+  const initialLoadRef = useRef(false)
 
   const loadChats = async () => {
     try {
@@ -208,12 +211,27 @@ function ChatsTab() {
     }
   }
 
-  const loadMensajes = async (chatId) => {
+  const isNearBottom = () => {
+    const el = messagesContainerRef.current
+    if (!el) return true
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 80
+  }
+
+  const loadMensajes = async (chatId, { initial = false } = {}) => {
     try {
+      const stickToBottom = initial || isNearBottom()
       const r = await get(`/admin/whatsapp/chats/${chatId}/mensajes?limit=200`)
-      setMensajes(r.data || [])
-      await post(`/admin/whatsapp/chats/${chatId}/leido`)
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+      const data = r.data || []
+      setMensajes(data)
+      const lastId = data.length ? data[data.length - 1].ID : null
+      const hasNew = lastId !== lastMensajeIdRef.current
+      lastMensajeIdRef.current = lastId
+      if (initial && data.some((m) => m.DIRECCION === 'IN')) {
+        post(`/admin/whatsapp/chats/${chatId}/leido`).catch(() => {})
+      }
+      if (initial || (hasNew && stickToBottom)) {
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: initial ? 'auto' : 'smooth' }), 50)
+      }
     } catch {}
   }
 
@@ -225,7 +243,9 @@ function ChatsTab() {
 
   useEffect(() => {
     if (!selected) return
-    loadMensajes(selected.ID)
+    lastMensajeIdRef.current = null
+    initialLoadRef.current = true
+    loadMensajes(selected.ID, { initial: true })
     const t = setInterval(() => loadMensajes(selected.ID), 5000)
     return () => clearInterval(t)
   }, [selected?.ID])
@@ -236,7 +256,7 @@ function ChatsTab() {
     try {
       await post(`/admin/whatsapp/chats/${selected.ID}/mensajes`, { texto })
       setTexto('')
-      loadMensajes(selected.ID)
+      await loadMensajes(selected.ID, { initial: true })
     } catch (e) {
       toast.error(e.response?.data?.detail?.message || 'Error enviando')
     } finally {
@@ -245,8 +265,8 @@ function ChatsTab() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden grid grid-cols-1 lg:grid-cols-[320px_1fr] h-[calc(100vh-280px)] min-h-[420px]">
-      <aside className="border-r border-gray-200 flex flex-col">
+    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden flex h-[calc(100vh-280px)] min-h-[420px]">
+      <aside className={`border-r border-gray-200 flex-col min-w-0 w-full md:w-[280px] lg:w-[320px] md:shrink-0 ${selected ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-3 border-b border-gray-100 flex items-center justify-between">
           <p className="text-xs text-gray-500 font-semibold uppercase">Conversaciones</p>
           <button onClick={loadChats} className="p-1 text-gray-500 hover:text-allways-primary">
@@ -287,34 +307,51 @@ function ChatsTab() {
         </div>
       </aside>
 
-      <section className="flex flex-col bg-gray-50">
+      <section className={`flex-col bg-gray-50 min-w-0 flex-1 ${selected ? 'flex' : 'hidden md:flex'}`}>
         {selected ? (
           <>
-            <div className="px-4 py-3 bg-white border-b border-gray-200">
-              <p className="font-bold text-gray-800">
-                {selected.PARTICIPANTE_NOMBRE || selected.NOMBRE_CONTACTO || selected.TELEFONO}
-              </p>
-              <p className="text-xs text-gray-500 font-mono">+{selected.TELEFONO}</p>
+            <div className="px-4 py-3 bg-white border-b border-gray-200 flex items-center gap-2">
+              <button
+                onClick={() => setSelected(null)}
+                className="md:hidden p-1 text-gray-500 hover:text-allways-primary"
+                aria-label="Volver"
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <div className="min-w-0">
+                <p className="font-bold text-gray-800 truncate">
+                  {selected.PARTICIPANTE_NOMBRE || selected.NOMBRE_CONTACTO || selected.TELEFONO}
+                </p>
+                <p className="text-xs text-gray-500 font-mono">+{selected.TELEFONO}</p>
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-2">
               {mensajes.length === 0 ? (
                 <p className="text-center text-sm text-gray-400 py-12">Sin mensajes aun</p>
               ) : (
-                mensajes.map((m) => (
-                  <div key={m.ID} className={`flex ${m.DIRECCION === 'OUT' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap ${
-                      m.DIRECCION === 'OUT' ? 'bg-allways-primary text-white' : 'bg-white border border-gray-200 text-gray-800'
-                    }`}>
-                      {m.PLANTILLA_CODIGO && (
-                        <p className="text-[10px] uppercase opacity-60 font-bold mb-0.5">{m.PLANTILLA_CODIGO}</p>
-                      )}
-                      <p>{m.TEXTO}</p>
-                      <p className={`text-[10px] mt-1 ${m.DIRECCION === 'OUT' ? 'text-white/70' : 'text-gray-400'}`}>
-                        {m.FECHA ? new Date(m.FECHA).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }) : ''}
-                      </p>
+                mensajes.map((m) => {
+                  const isOut = m.DIRECCION === 'OUT'
+                  const autor = isOut
+                    ? (m.PLANTILLA_CODIGO ? 'Automático' : (m.ADMIN_NOMBRE || m.ADMIN_USERNAME || 'Sistema'))
+                    : null
+                  return (
+                    <div key={m.ID} className={`flex ${isOut ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words ${
+                        isOut ? 'bg-allways-primary text-white' : 'bg-white border border-gray-200 text-gray-800'
+                      }`} style={{ overflowWrap: 'anywhere' }}>
+                        {isOut && (
+                          <p className="text-[10px] uppercase opacity-70 font-bold mb-0.5">
+                            {autor}{m.PLANTILLA_CODIGO ? ` · ${m.PLANTILLA_CODIGO}` : ''}
+                          </p>
+                        )}
+                        <p>{m.TEXTO}</p>
+                        <p className={`text-[10px] mt-1 ${isOut ? 'text-white/70' : 'text-gray-400'}`}>
+                          {m.FECHA ? new Date(m.FECHA).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  )
+                })
               )}
               <div ref={messagesEndRef} />
             </div>

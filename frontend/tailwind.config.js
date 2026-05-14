@@ -14,6 +14,7 @@ export default {
           green: '#2D7A3A',
           'gray-light': '#E8EDF2',
           white: '#FFFFFF',
+          primary: '#D4A843',
         }
       },
       fontFamily: {

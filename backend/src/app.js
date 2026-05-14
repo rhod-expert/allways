@@ -16,6 +16,15 @@ const clienteRoutes = require('./routes/cliente');
 
 const app = express();
 
+// ---- Disable ETag on API responses ----
+// JSON API responses must not return 304, the SW NetworkFirst strategy
+// forwards 304 with empty body to the page, breaking data loading.
+app.set('etag', false);
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
 // ---- Security headers ----
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
