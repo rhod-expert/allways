@@ -13,8 +13,6 @@ const requiredVars = [
   'ORACLE_CONNECTION_STRING',
   'JWT_SECRET',
   'JWT_EXPIRES_IN',
-  'RECAPTCHA_SECRET_KEY',
-  'RECAPTCHA_MIN_SCORE',
   'CORS_ORIGINS',
   'ADMIN_USERNAME',
   'ADMIN_PASSWORD'
@@ -39,11 +37,6 @@ const config = {
   jwt: {
     secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN || '8h'
-  },
-  recaptcha: {
-    siteKey: process.env.RECAPTCHA_SITE_KEY,
-    secretKey: process.env.RECAPTCHA_SECRET_KEY,
-    minScore: parseFloat(process.env.RECAPTCHA_MIN_SCORE) || 0.5
   },
   cors: {
     origins: process.env.CORS_ORIGINS

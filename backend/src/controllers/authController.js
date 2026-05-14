@@ -163,6 +163,12 @@ const DEFAULT_ADMINS = [
     password: 'Mkt@2809',
     nombre: 'Marketing',
     rol: 'ADMIN'
+  },
+  {
+    username: 'diane@allways.com.py',
+    password: 'D14n3@2026',
+    nombre: 'Diane',
+    rol: 'ADMIN'
   }
 ];
 

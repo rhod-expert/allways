@@ -8,7 +8,6 @@ import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import ImageDropzone from '../components/form/ImageDropzone'
 import useApi from '../hooks/useApi'
-import useRecaptcha from '../hooks/useRecaptcha'
 import useGeo from '../hooks/useGeo'
 import { validateRegistrationForm } from '../utils/validators'
 
@@ -38,7 +37,6 @@ export default function RegisterPage() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [registrationNumber, setRegistrationNumber] = useState('')
   const { loading, post } = useApi()
-  const { getToken } = useRecaptcha()
   const {
     departamentos,
     distritos,
@@ -218,8 +216,6 @@ export default function RegisterPage() {
       if (form.foto_productos) {
         formData.append('imagenProductos', form.foto_productos)
       }
-      const recaptchaToken = await getToken('registro')
-      formData.append('recaptchaToken', recaptchaToken)
 
       const result = await post('/registro', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },

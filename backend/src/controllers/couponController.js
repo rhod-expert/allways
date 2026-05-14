@@ -6,7 +6,7 @@ const queries = require('../models/queries');
 
 /**
  * POST /api/cupones/consulta
- * Query coupons by cedula (public, with reCAPTCHA).
+ * Query coupons by cedula (public).
  */
 async function consulta(req, res, next) {
   try {

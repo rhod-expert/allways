@@ -4,11 +4,11 @@ const rateLimit = require('express-rate-limit');
 
 /**
  * Rate limiter for registration endpoint.
- * 5 requests per IP per 15 minutes.
+ * 30 requests per IP per 15 minutes — generoso para NAT compartilhado em PY.
  */
 const registroLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 30,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: {
@@ -20,11 +20,11 @@ const registroLimiter = rateLimit({
 
 /**
  * Rate limiter for coupon query endpoint.
- * 10 requests per IP per 15 minutes.
+ * 60 requests per IP per 15 minutes — generoso para NAT compartilhado em PY.
  */
 const consultaLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 60,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: {
