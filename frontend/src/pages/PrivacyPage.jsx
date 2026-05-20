@@ -15,11 +15,11 @@ export default function PrivacyPage() {
 
         <article className="prose prose-gray max-w-none">
           <h1 className="text-3xl font-black text-allways-dark uppercase mb-2">Politica de Privacidad</h1>
-          <p className="text-sm text-gray-400 mb-8">Ultima actualizacion: Febrero 2026</p>
+          <p className="text-sm text-gray-400 mb-8">Ultima actualizacion: Mayo 2026</p>
 
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">1. Responsable del tratamiento</h2>
           <p className="text-gray-600 leading-relaxed mb-4">
-            San Jose Import Export S.A. (en adelante, "la Empresa"), con domicilio legal en Asuncion, Republica del Paraguay, es el responsable del tratamiento de los datos personales recopilados a traves del sitio web de la promocion "Allways Show de Premios".
+            San Jose Import Export S.A. (en adelante, "la Empresa"), con domicilio legal en Ciudad del Este, Republica del Paraguay, es el responsable del tratamiento de los datos personales recopilados a traves del sitio web de la promocion "Promocion Allways 2026".
           </p>
 
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">2. Datos recopilados</h2>
@@ -37,7 +37,7 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">3. Finalidad del tratamiento</h2>
           <p className="text-gray-600 leading-relaxed mb-2">Los datos personales seran utilizados para:</p>
           <ul className="list-disc list-inside text-gray-600 space-y-1 mb-4">
-            <li>Gestionar la participacion en la promocion "Allways Show de Premios"</li>
+            <li>Gestionar la participacion en la promocion "Promocion Allways 2026"</li>
             <li>Verificar las facturas y productos registrados</li>
             <li>Generar y administrar cupones de participacion</li>
             <li>Contactar a los ganadores de los sorteos</li>
@@ -52,7 +52,7 @@ export default function PrivacyPage() {
 
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">5. Conservacion de datos</h2>
           <p className="text-gray-600 leading-relaxed mb-4">
-            Los datos personales seran conservados durante la vigencia de la promocion y por un periodo adicional de un (1) ano posterior a su finalizacion para cumplir con obligaciones legales. Transcurrido dicho plazo, los datos seran eliminados de forma segura.
+            Los datos personales seran conservados por un plazo de hasta veinticuatro (24) meses, para cumplir con obligaciones legales. Transcurrido dicho plazo, los datos seran eliminados de forma segura.
           </p>
 
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">6. Comparticion de datos</h2>
@@ -90,12 +90,12 @@ export default function PrivacyPage() {
 
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">11. Contacto</h2>
           <p className="text-gray-600 leading-relaxed mb-4">
-            Para consultas o reclamos relacionados con el tratamiento de datos personales, el participante puede comunicarse a: datos@sanjoseimport.com.py o a la direccion fisica de San Jose Import Export S.A. en Asuncion, Paraguay.
+            Para consultas o reclamos relacionados con el tratamiento de datos personales, el participante puede comunicarse a: datos@sanjoseimport.com.py o a la direccion fisica de San Jose Import Export S.A. en Ciudad del Este, Paraguay.
           </p>
 
           <div className="mt-12 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-400">
-              San Jose Import Export S.A. - Asuncion, Paraguay - 2026
+              San Jose Import Export S.A. - Ciudad del Este, Paraguay - 2026
             </p>
           </div>
         </article>
