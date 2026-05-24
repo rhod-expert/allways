@@ -74,7 +74,7 @@ export default function CouponCheckPage() {
                   type="text"
                   value={cedula}
                   onChange={(e) => { setCedula(e.target.value); setCedulaError(null) }}
-                  placeholder="Ingresa tu cedula de identidad"
+                  placeholder="Ingresa tu CI/ RUC o C.Extranjeria"
                   inputMode="numeric"
                   className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder:text-gray-400 outline-none focus:border-allways-gold transition-colors"
                 />

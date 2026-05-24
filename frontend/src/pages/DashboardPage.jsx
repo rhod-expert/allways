@@ -136,7 +136,7 @@ export default function DashboardPage() {
                 <tr className="border-b border-gray-100">
                   <th className="text-left py-2 px-2 text-xs font-semibold text-gray-400 uppercase">#</th>
                   <th className="text-left py-2 px-2 text-xs font-semibold text-gray-400 uppercase">Nombre</th>
-                  <th className="text-left py-2 px-2 text-xs font-semibold text-gray-400 uppercase">Cedula</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-gray-400 uppercase">CI/RUC/CE</th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-gray-400 uppercase">Cupones</th>
                 </tr>
               </thead>

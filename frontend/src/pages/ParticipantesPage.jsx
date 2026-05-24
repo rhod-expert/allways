@@ -93,7 +93,7 @@ export default function ParticipantesPage() {
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Buscar por nombre o cedula..."
+            placeholder="Buscar por nombre o CI/RUC..."
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-gray-200 outline-none focus:border-allways-blue text-sm text-gray-800"
           />
         </div>
@@ -165,7 +165,7 @@ export default function ParticipantesPage() {
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
                     <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Nombre</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Cedula</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">CI/RUC/CE</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Telefono</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Ubicacion</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Direccion</th>

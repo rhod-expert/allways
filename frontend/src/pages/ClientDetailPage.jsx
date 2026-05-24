@@ -233,7 +233,7 @@ export default function ClientDetailPage() {
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 sm:mb-4">Datos del Participante</h3>
             <div className="space-y-3">
               <InfoRow icon={User} label="Nombre" value={registration.NOMBRE} />
-              <InfoRow icon={FileText} label="Cedula" value={registration.CEDULA} mono />
+              <InfoRow icon={FileText} label="CI/RUC/C.Ext." value={registration.CEDULA} mono />
               <InfoRow icon={Phone} label="Telefono" value={registration.TELEFONO} />
               {registration.EMAIL && (
                 <InfoRow icon={Mail} label="Email" value={registration.EMAIL} small />
@@ -320,7 +320,7 @@ export default function ClientDetailPage() {
               <div className="space-y-3">
                 <EditField
                   icon={FileText}
-                  label="Numero de factura"
+                  label="Numero de la Factura/Ticket de compra"
                   value={editForm.numeroFactura}
                   onChange={(v) => setEditForm((p) => ({ ...p, numeroFactura: v }))}
                   mono
@@ -359,7 +359,7 @@ export default function ClientDetailPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                <InfoRow icon={FileText} label="Numero de factura" value={registration.NUMERO_FACTURA} mono />
+                <InfoRow icon={FileText} label="Numero Factura/Ticket" value={registration.NUMERO_FACTURA} mono />
                 <div className="flex items-center gap-3">
                   <Package size={16} className="text-gray-400 flex-shrink-0" />
                   <div>

@@ -283,7 +283,7 @@ export default function RegisterPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input
-                      label="Cedula de Identidad"
+                      label="CI/ RUC o C.Extranjeria"
                       name="cedula"
                       value={form.cedula}
                       onChange={handleChange}
@@ -422,7 +422,7 @@ export default function RegisterPage() {
                 <h3 className="text-sm font-bold text-allways-navy uppercase tracking-wider mb-4">Datos de la Factura</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <Input
-                    label="Numero de factura"
+                    label="Numero de la Factura/Ticket de compra"
                     name="numero_factura"
                     value={form.numero_factura}
                     onChange={handleChange}

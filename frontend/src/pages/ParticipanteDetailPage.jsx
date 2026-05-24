@@ -77,7 +77,7 @@ export default function ParticipanteDetailPage() {
         </Link>
         <div className="min-w-0">
           <h2 className="text-lg sm:text-2xl font-black text-gray-800 truncate">{participant.NOMBRE}</h2>
-          <p className="text-gray-500 text-xs sm:text-sm">CI: {participant.CEDULA}</p>
+          <p className="text-gray-500 text-xs sm:text-sm">CI/RUC: {participant.CEDULA}</p>
         </div>
       </div>
 
@@ -98,7 +98,7 @@ export default function ParticipanteDetailPage() {
           <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Datos Personales</h3>
           <div className="space-y-3">
             <InfoRow icon={User} label="Nombre completo" value={participant.NOMBRE} />
-            <InfoRow icon={FileText} label="Cedula de identidad" value={participant.CEDULA} mono />
+            <InfoRow icon={FileText} label="CI/ RUC o C.Extranjeria" value={participant.CEDULA} mono />
             <InfoRow icon={Phone} label="Telefono" value={participant.TELEFONO} />
             {participant.EMAIL && (
               <InfoRow icon={Mail} label="Email" value={participant.EMAIL} />

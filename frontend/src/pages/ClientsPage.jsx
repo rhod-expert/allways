@@ -74,7 +74,7 @@ export default function ClientsPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar nombre, cedula o factura..."
+              placeholder="Buscar nombre, CI/RUC o factura..."
               className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-allways-blue transition-colors"
             />
           </div>
@@ -186,7 +186,7 @@ export default function ClientsPage() {
                   <tr className="bg-gray-50 border-b border-gray-100">
                     <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">ID</th>
                     <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre</th>
-                    <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Cedula</th>
+                    <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">CI/RUC/CE</th>
                     <th className="text-left py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Factura</th>
                     <th className="text-center py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Cant.</th>
                     <th className="text-center py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
