@@ -34,12 +34,14 @@ router.get('/dashboard/mapa', dashboardController.getMapaData);
 
 // ---- Registros ----
 router.get('/registros', adminController.listRegistros);
+router.get('/registros/export', adminController.exportRegistros);
 router.get('/registros/:id', adminController.getRegistro);
 router.put('/registros/:id/validar', adminController.validarRegistro);
 router.put('/registros/:id', adminController.editarRegistro);
 
 // ---- Participantes ----
 router.get('/participantes', adminController.listParticipantes);
+router.get('/participantes/export', adminController.exportParticipantes);
 router.get('/participantes/:id', adminController.getParticipante);
 router.post('/participantes/:id/revocar-sesiones', adminController.revocarSesionesParticipante);
 

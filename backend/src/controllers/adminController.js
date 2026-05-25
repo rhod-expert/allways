@@ -4,6 +4,14 @@ const db = require('../config/database');
 const queries = require('../models/queries');
 const couponService = require('../services/couponService');
 const notificationService = require('../services/notificationService');
+const excelExport = require('../services/excelExportService');
+
+const EXPORT_MAX_ROWS = 50000;
+const EXPORT_TS = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
+};
 
 /**
  * GET /api/admin/registros
@@ -424,6 +432,117 @@ async function revocarSesionesParticipante(req, res, next) {
   } catch (err) { next(err); }
 }
 
+/**
+ * GET /api/admin/registros/export
+ * Devuelve un .xlsx con los registros que pasan los mismos filtros que
+ * /admin/registros (search, estado, fecha, fechaDesde, fechaHasta), sin paginar.
+ */
+async function exportRegistros(req, res, next) {
+  try {
+    const { estado, fecha, fechaDesde, fechaHasta, search } = req.query;
+
+    let sql = queries.REGISTRO_EXPORT;
+    const binds = {};
+
+    if (estado && estado.trim()) {
+      sql += ` AND R.ESTADO = :estado`;
+      binds.estado = estado.trim().toUpperCase();
+    }
+    if (fecha && fecha.trim()) {
+      sql += ` AND TRUNC(R.FECHA_REGISTRO) = TO_DATE(:fecha, 'YYYY-MM-DD')`;
+      binds.fecha = fecha.trim();
+    }
+    if (fechaDesde && fechaDesde.trim()) {
+      sql += ` AND R.FECHA_REGISTRO >= TO_DATE(:fechaDesde, 'YYYY-MM-DD')`;
+      binds.fechaDesde = fechaDesde.trim();
+    }
+    if (fechaHasta && fechaHasta.trim()) {
+      sql += ` AND R.FECHA_REGISTRO < TO_DATE(:fechaHasta, 'YYYY-MM-DD') + 1`;
+      binds.fechaHasta = fechaHasta.trim();
+    }
+    if (search && search.trim()) {
+      sql += ` AND (P.CEDULA LIKE :search OR UPPER(P.NOMBRE) LIKE :searchUpper OR R.NUMERO_FACTURA LIKE :searchFactura)`;
+      binds.search = `%${search.trim()}%`;
+      binds.searchUpper = `%${search.trim().toUpperCase()}%`;
+      binds.searchFactura = `%${search.trim()}%`;
+    }
+
+    sql += ` ORDER BY R.FECHA_REGISTRO DESC FETCH FIRST :maxRows ROWS ONLY`;
+    binds.maxRows = EXPORT_MAX_ROWS;
+
+    const result = await db.execute(sql, binds);
+    const rows = result.rows || [];
+
+    const buffer = await excelExport.buildRegistrosXlsx(rows, {
+      adminId: req.admin?.id,
+      adminUsername: req.admin?.username,
+      filters: { search, estado, fecha, fechaDesde, fechaHasta }
+    });
+
+    await db.execute(queries.ADMIN_LOG_INSERT, {
+      adminId: req.admin.id,
+      accion: 'EXPORT_REGISTROS',
+      detalle: `Exportados ${rows.length} registros (filtros: ${JSON.stringify({ search, estado, fecha, fechaDesde, fechaHasta })})`,
+      ip: req.ip || null
+    });
+
+    const filename = `allways-registros-${EXPORT_TS()}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.end(Buffer.from(buffer));
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/admin/participantes/export
+ * Devuelve un .xlsx con los participantes filtrados por search, sin paginar.
+ */
+async function exportParticipantes(req, res, next) {
+  try {
+    const { search } = req.query;
+
+    let sql = queries.PARTICIPANTE_EXPORT;
+    const binds = {};
+
+    if (search && search.trim()) {
+      sql += ` AND (P.CEDULA LIKE :search OR UPPER(P.NOMBRE) LIKE :searchUpper)`;
+      binds.search = `%${search.trim()}%`;
+      binds.searchUpper = `%${search.trim().toUpperCase()}%`;
+    }
+
+    sql += ` GROUP BY P.ID, P.NOMBRE, P.CEDULA, P.TELEFONO, P.EMAIL, P.DEPARTAMENTO, P.CIUDAD, P.CALLE, P.NUMERO_CASA, P.COMPLEMENTO, GD.NOMBRE, GDI.NOMBRE, GC.NOMBRE, GB.NOMBRE, P.FECHA_REGISTRO, P.ACTIVO`;
+    sql += ` ORDER BY P.FECHA_REGISTRO DESC FETCH FIRST :maxRows ROWS ONLY`;
+    binds.maxRows = EXPORT_MAX_ROWS;
+
+    const result = await db.execute(sql, binds);
+    const rows = result.rows || [];
+
+    const buffer = await excelExport.buildParticipantesXlsx(rows, {
+      adminId: req.admin?.id,
+      adminUsername: req.admin?.username,
+      filters: { search }
+    });
+
+    await db.execute(queries.ADMIN_LOG_INSERT, {
+      adminId: req.admin.id,
+      accion: 'EXPORT_PARTICIPANTES',
+      detalle: `Exportados ${rows.length} clientes (filtros: ${JSON.stringify({ search })})`,
+      ip: req.ip || null
+    });
+
+    const filename = `allways-clientes-${EXPORT_TS()}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.end(Buffer.from(buffer));
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   listRegistros,
   getRegistro,
@@ -431,5 +550,7 @@ module.exports = {
   editarRegistro,
   listParticipantes,
   getParticipante,
-  revocarSesionesParticipante
+  revocarSesionesParticipante,
+  exportRegistros,
+  exportParticipantes
 };

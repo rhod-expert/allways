@@ -11,10 +11,12 @@ import {
   Ticket,
   ChevronLeft,
   ChevronRight,
+  Download,
 } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import useApi from '../hooks/useApi'
+import downloadXlsx from '../services/downloadXlsx'
 
 const PAGE_SIZE = 15
 
@@ -25,6 +27,20 @@ export default function ParticipantesPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState('')
+
+  const handleExport = async () => {
+    setExporting(true)
+    setExportError('')
+    try {
+      await downloadXlsx('/admin/participantes/export', { search }, 'allways-clientes.xlsx')
+    } catch (err) {
+      setExportError(err.response?.data?.message || err.message || 'Error exportando')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const fetchParticipants = useCallback(async (page = 1, searchTerm = '') => {
     setLoading(true)
@@ -82,6 +98,21 @@ export default function ParticipantesPage() {
           <p className="text-gray-500 text-sm">
             {pagination.total} participante{pagination.total !== 1 ? 's' : ''} registrado{pagination.total !== 1 ? 's' : ''}
           </p>
+        </div>
+        <div className="flex flex-col items-stretch sm:items-end gap-1">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting || pagination.total === 0}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+            title="Exportar a Excel (.xlsx) respetando la búsqueda actual"
+          >
+            {exporting ? <Spinner size="sm" /> : <Download size={16} />}
+            {exporting ? 'Exportando…' : 'Exportar Excel'}
+          </button>
+          {exportError && (
+            <span className="text-xs text-red-600 text-right">{exportError}</span>
+          )}
         </div>
       </div>
 

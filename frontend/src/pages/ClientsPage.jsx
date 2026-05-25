@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Search, Filter, ChevronLeft, ChevronRight, Eye, FileText, User, Calendar } from 'lucide-react'
+import { Search, Filter, ChevronLeft, ChevronRight, Eye, FileText, User, Calendar, Download } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import useApi from '../hooks/useApi'
+import downloadXlsx from '../services/downloadXlsx'
 
 const ESTADOS = ['', 'PENDIENTE', 'ACEPTADO', 'RECHAZADO']
 const PAGE_SIZE = 15
@@ -18,8 +19,27 @@ export default function ClientsPage() {
   const [dateTo, setDateTo] = useState('')
   const [pageLoading, setPageLoading] = useState(true)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState('')
   const navigate = useNavigate()
   const { get } = useApi()
+
+  const handleExport = async () => {
+    setExporting(true)
+    setExportError('')
+    try {
+      await downloadXlsx('/admin/registros/export', {
+        search: searchTerm.trim(),
+        estado: statusFilter,
+        fechaDesde: dateFrom,
+        fechaHasta: dateTo,
+      }, 'allways-registros.xlsx')
+    } catch (err) {
+      setExportError(err.response?.data?.message || err.message || 'Error exportando')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const fetchRegistrations = useCallback(async () => {
     setPageLoading(true)
@@ -59,9 +79,26 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h2 className="text-xl sm:text-2xl font-black text-gray-800">Registros</h2>
-        <p className="text-gray-500 text-xs sm:text-sm">Gestiona las facturas y registros de los participantes</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-black text-gray-800">Registros</h2>
+          <p className="text-gray-500 text-xs sm:text-sm">Gestiona las facturas y registros de los participantes</p>
+        </div>
+        <div className="flex flex-col items-stretch sm:items-end gap-1">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting || totalCount === 0}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+            title="Exportar a Excel (.xlsx) respetando los filtros actuales"
+          >
+            {exporting ? <Spinner size="sm" /> : <Download size={16} />}
+            {exporting ? 'Exportando…' : 'Exportar Excel'}
+          </button>
+          {exportError && (
+            <span className="text-xs text-red-600 text-right">{exportError}</span>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
