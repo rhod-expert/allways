@@ -283,7 +283,7 @@ export default function RegisterPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input
-                      label="CI/ RUC o C.Extranjeria"
+                      label="CI/RUC o C. Extranjeria"
                       name="cedula"
                       value={form.cedula}
                       onChange={handleChange}
