@@ -37,3 +37,6 @@ tmp/
 
 # Serena IDE state (auto-updates with langserver list)
 .serena/
+
+# Playwright MCP ephemeral artifacts (console logs, snapshots)
+.playwright-mcp/

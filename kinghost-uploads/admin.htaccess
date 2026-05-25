@@ -1,0 +1,18 @@
+# Redireciona /admin e /admin/* para o painel real em yaguaretex.
+# Mantem deep-links (/admin/clientes/123, /admin/sorteos, etc).
+# Preserva query string.
+#
+# Onde colocar:
+#   - www.allways.com.py        -> raiz do site (ex: /public_html/.htaccess)
+#   - www.sanjosesa.com.py      -> dentro de /allways/  (ex: /public_html/allways/.htaccess)
+#
+# Ambos cenarios casam o mesmo padrao porque o RewriteRule e relativo ao
+# diretorio que contem o .htaccess.
+
+RewriteEngine On
+
+# /admin -> /admin/login (mais amigavel para usuario digitar)
+RewriteRule ^admin/?$ https://yaguaretex.sanjosesa.com.py/allways/admin/login [R=302,L]
+
+# /admin/qualquer-coisa -> preserva o subpath
+RewriteRule ^admin/(.+)$ https://yaguaretex.sanjosesa.com.py/allways/admin/$1 [R=302,L,QSA]

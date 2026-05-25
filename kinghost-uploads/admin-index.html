@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=https://yaguaretex.sanjosesa.com.py/allways/admin/login">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Allways — Panel Administrativo</title>
+    <script>
+        // Preserva cualquier subpath (ej. /admin/dashboard, /admin/clientes/123)
+        // y querystring para que un deep-link siga llegando al destino correcto.
+        (function () {
+            var path = window.location.pathname.replace(/^\/allways/, '');
+            if (path.indexOf('/admin') !== 0) path = '/admin/login';
+            window.location.replace(
+                'https://yaguaretex.sanjosesa.com.py/allways' + path + window.location.search + window.location.hash
+            );
+        })();
+    </script>
+</head>
+<body>
+    <p>Redirigiendo al panel administrativo...</p>
+    <p><a href="https://yaguaretex.sanjosesa.com.py/allways/admin/login">Click aqui si no eres redirigido automaticamente</a></p>
+</body>
+</html>
