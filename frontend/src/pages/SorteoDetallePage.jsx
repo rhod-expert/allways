@@ -13,6 +13,9 @@ import {
   Sparkles,
   RotateCcw,
   AlertTriangle,
+  MapPin,
+  Store,
+  UserCheck,
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Spinner from '../components/ui/Spinner'
@@ -256,6 +259,21 @@ export default function SorteoDetallePage() {
                       {p.GANADOR_TELEFONO && (
                         <p className="text-xs text-green-700 flex items-center gap-1.5">
                           <Phone size={12} /> {p.GANADOR_TELEFONO}
+                        </p>
+                      )}
+                      {p.GANADOR_CIUDAD && (
+                        <p className="text-xs text-green-700 flex items-center gap-1.5">
+                          <MapPin size={12} /> {p.GANADOR_CIUDAD}
+                        </p>
+                      )}
+                      {p.GANADOR_TIENDA && (
+                        <p className="text-xs text-green-700 flex items-center gap-1.5">
+                          <Store size={12} /> {p.GANADOR_TIENDA}
+                        </p>
+                      )}
+                      {p.GANADOR_VENDEDOR && (
+                        <p className="text-xs text-green-700 flex items-center gap-1.5">
+                          <UserCheck size={12} /> {p.GANADOR_VENDEDOR}
                         </p>
                       )}
                       <p className="text-xs text-green-600 flex items-center gap-1.5 font-mono">
