@@ -708,6 +708,47 @@ const CLIENTE_LOG_INSERT = `
 `;
 
 // ============================================================
+// PUBLIC LANDING (banner del sorteo del mes + listado de ganadores)
+// ============================================================
+
+// Estado de cada mes con premios activos: cuantos premios hay, cuantos
+// fueron sorteados, y la fecha mas reciente de sorteo. El frontend usa
+// esto para decidir si el banner muestra "Participa" o "Ver ganadores".
+const SORTEO_BANNER_STATUS = `
+  SELECT P.MES,
+         COUNT(P.ID) AS TOTAL_PREMIOS,
+         COUNT(P.CUPON_GANADOR_ID) AS PREMIOS_SORTEADOS,
+         MAX(P.FECHA_SORTEO) AS ULTIMO_SORTEO,
+         MIN(P.DESCRIPCION) KEEP (DENSE_RANK FIRST ORDER BY P.ID ASC) AS PREMIO_DESTACADO
+  FROM ALLWAYS_PREMIOS P
+  WHERE P.ACTIVO = 'S'
+  GROUP BY P.MES
+  ORDER BY DECODE(UPPER(P.MES),
+    'ENERO',1,'FEBRERO',2,'MARZO',3,'ABRIL',4,'MAYO',5,'JUNIO',6,
+    'JULIO',7,'AGOSTO',8,'SEPTIEMBRE',9,'OCTUBRE',10,'NOVIEMBRE',11,'DICIEMBRE',12,13)
+`;
+
+// Ganadores publicos: solo nombre, ciudad y descripcion del premio.
+// Intencionalmente NO devuelve CI ni telefono para no exponer PII.
+const SORTEO_GANADORES_PUBLICOS = `
+  SELECT P.ID, P.DESCRIPCION AS PREMIO, P.IMAGEN AS PREMIO_IMAGEN,
+         P.FECHA_SORTEO,
+         PA.NOMBRE AS GANADOR_NOMBRE,
+         NVL(GC.NOMBRE, PA.CIUDAD) AS GANADOR_CIUDAD,
+         NVL(GD.NOMBRE, PA.DEPARTAMENTO) AS GANADOR_DEPARTAMENTO
+  FROM ALLWAYS_PREMIOS P
+  LEFT JOIN ALLWAYS_CUPONES C ON C.ID = P.CUPON_GANADOR_ID
+  LEFT JOIN ALLWAYS_PARTICIPANTES PA ON PA.ID = C.PARTICIPANTE_ID
+  LEFT JOIN ALLWAYS_GEO_CIUDADES GC ON GC.ID = PA.CIUDAD_ID
+    AND GC.DEPARTAMENTO_ID = PA.DEPARTAMENTO_ID
+    AND GC.DISTRITO_ID = PA.DISTRITO_ID
+  LEFT JOIN ALLWAYS_GEO_DEPARTAMENTOS GD ON GD.ID = PA.DEPARTAMENTO_ID
+  WHERE P.ACTIVO = 'S' AND UPPER(P.MES) = UPPER(:mes)
+    AND P.CUPON_GANADOR_ID IS NOT NULL
+  ORDER BY P.ID ASC
+`;
+
+// ============================================================
 // EXPORT QUERIES (sin paginacion, todas las columnas relevantes)
 // ============================================================
 
@@ -795,6 +836,8 @@ module.exports = {
   DASHBOARD_MAPA,
   SORTEO_RESUMEN_MESES,
   SORTEO_PREMIOS_BY_MES,
+  SORTEO_BANNER_STATUS,
+  SORTEO_GANADORES_PUBLICOS,
   SORTEO_CUPONES_ELEGIBLES,
   SORTEO_MARCAR_GANADOR_CUPON,
   SORTEO_MARCAR_GANADOR_PREMIO,

@@ -5,6 +5,7 @@ const router = express.Router();
 
 const registrationController = require('../controllers/registrationController');
 const couponController = require('../controllers/couponController');
+const publicSorteoController = require('../controllers/publicSorteoController');
 const { registroLimiter, consultaLimiter } = require('../middleware/rateLimiter');
 const { handleUpload } = require('../middleware/upload');
 
@@ -36,6 +37,18 @@ router.post(
  * List campaign prizes (public, no auth).
  */
 router.get('/premios', couponController.listPremios);
+
+/**
+ * GET /api/sorteo-banner
+ * Returns the current state for the landing-page top banner.
+ */
+router.get('/sorteo-banner', publicSorteoController.getBanner);
+
+/**
+ * GET /api/ganadores/:mes
+ * Public list of winners for the given month (no PII beyond name + city).
+ */
+router.get('/ganadores/:mes', publicSorteoController.listGanadores);
 
 const geoController = require('../controllers/geoController');
 

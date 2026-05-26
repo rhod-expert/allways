@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router'
-import { Menu, X, Zap } from 'lucide-react'
+import { Menu, X, Zap, Trophy } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import api from '../../services/api'
 
 const navLinks = [
   { to: '/', label: 'Inicio' },
@@ -9,20 +10,58 @@ const navLinks = [
   { to: '/mis-cupones', label: 'Mis Cupones' },
 ]
 
+const FALLBACK_BANNER = {
+  mode: 'participar',
+  mesLabel: '',
+  link: '/participar',
+  premioDestacado: null
+}
+
+function bannerText(banner) {
+  if (!banner) return 'Participa ahora del Allways Show de Premios!'
+  if (banner.mode === 'ganadores') {
+    return `Sorteo de ${banner.mesLabel} realizado — Conoce a los ganadores!`
+  }
+  if (banner.mode === 'campana_finalizada') {
+    return `Campana finalizada — Conoce a los ganadores de ${banner.mesLabel}`
+  }
+  // participar
+  const premio = banner.premioDestacado ? ` y gana ${banner.premioDestacado}!` : '!'
+  const mes = banner.mesLabel || ''
+  return `Sorteo de ${mes} — Participa ahora${premio}`
+}
+
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [banner, setBanner] = useState(null)
   const location = useLocation()
 
   const isActive = (path) => location.pathname === path
+
+  useEffect(() => {
+    let cancelled = false
+    api.get('/sorteo-banner')
+      .then((res) => {
+        if (!cancelled) setBanner(res.data?.data || FALLBACK_BANNER)
+      })
+      .catch(() => {
+        if (!cancelled) setBanner(FALLBACK_BANNER)
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  const bannerHref = banner?.link || '/participar'
+  const bannerIcon = banner?.mode === 'ganadores' || banner?.mode === 'campana_finalizada' ? Trophy : Zap
+  const BannerIcon = bannerIcon
 
   return (
     <>
       {/* Announcement bar */}
       <div className="announcement-bar py-1.5 text-center">
-        <Link to="/participar" className="flex items-center justify-center gap-2 text-allways-dark text-xs sm:text-sm font-bold">
-          <Zap size={14} className="fill-allways-dark" />
-          <span>Sorteo de Mayo -- Participa ahora y gana una TV 50"!</span>
-          <Zap size={14} className="fill-allways-dark" />
+        <Link to={bannerHref} className="flex items-center justify-center gap-2 text-allways-dark text-xs sm:text-sm font-bold">
+          <BannerIcon size={14} className="fill-allways-dark" />
+          <span>{bannerText(banner)}</span>
+          <BannerIcon size={14} className="fill-allways-dark" />
         </Link>
       </div>
 

@@ -8,6 +8,7 @@ import CouponCheckPage from './pages/CouponCheckPage'
 import RulesPage from './pages/RulesPage'
 import PrivacyPage from './pages/PrivacyPage'
 import LegalNoticePage from './pages/LegalNoticePage'
+import GanadoresPage from './pages/GanadoresPage'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import ClientsPage from './pages/ClientsPage'
@@ -46,6 +47,7 @@ export default function App() {
       <Route path="/bases-y-condiciones" element={<PublicLayout><RulesPage /></PublicLayout>} />
       <Route path="/privacidad" element={<PublicLayout><PrivacyPage /></PublicLayout>} />
       <Route path="/aviso-legal" element={<PublicLayout><LegalNoticePage /></PublicLayout>} />
+      <Route path="/ganadores/:mes" element={<PublicLayout><GanadoresPage /></PublicLayout>} />
 
       {/* Admin login */}
       <Route path="/admin/login" element={<LoginPage />} />
