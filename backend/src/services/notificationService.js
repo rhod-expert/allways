@@ -54,16 +54,23 @@ async function sendAndStore({ participante, registroId, tipo, plantillaCodigo, v
   const { texto: plantillaTexto } = await getPlantilla(plantillaCodigo);
   const mensaje = applyTemplate(plantillaTexto, vars);
 
+  // `participante` puede ser una fila de ALLWAYS_REGISTROS (que trae PARTICIPANTE_ID
+  // junto a su propio ID de registro) o una fila de ALLWAYS_PARTICIPANTES (cuyo ID
+  // ya es el del participante). Preferimos PARTICIPANTE_ID para no confundir el ID
+  // del registro con el del participante (rompía la FK de ALLWAYS_WA_LOG_NOTIF).
+  const participanteId = participante.PARTICIPANTE_ID || participante.participante_id
+    || participante.ID || participante.id;
+
   let chat;
   try {
     chat = await wa.findOrCreateChat({
       phoneRaw: participante.TELEFONO || participante.telefono,
-      participanteId: participante.ID || participante.id,
+      participanteId,
       nombreContacto: participante.NOMBRE || participante.nombre
     });
   } catch (e) {
     await logNotif({
-      registroId, participanteId: participante.ID || participante.id,
+      registroId, participanteId,
       tipo, exitoso: false, errorDetalle: `chat: ${e.message}`
     });
     throw e;
@@ -76,7 +83,7 @@ async function sendAndStore({ participante, registroId, tipo, plantillaCodigo, v
   } catch (e) {
     const detalle = e.response?.data ? JSON.stringify(e.response.data).slice(0, 800) : e.message;
     await logNotif({
-      registroId, participanteId: participante.ID || participante.id,
+      registroId, participanteId,
       tipo, exitoso: false, errorDetalle: `evolution: ${detalle}`
     });
     throw e;
@@ -93,7 +100,7 @@ async function sendAndStore({ participante, registroId, tipo, plantillaCodigo, v
   });
 
   await logNotif({
-    registroId, participanteId: participante.ID || participante.id,
+    registroId, participanteId,
     tipo, exitoso: true, mensajeId
   });
 
