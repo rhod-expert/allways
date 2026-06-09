@@ -39,6 +39,8 @@ export default function ClientDetailPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
+  // 'REJECT' = pending registration, 'REVERT' = already-accepted registration
+  const [rejectMode, setRejectMode] = useState('REJECT')
   const [zoomImage, setZoomImage] = useState(null)
   const [editing, setEditing] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
@@ -126,23 +128,34 @@ export default function ClientDetailPage() {
     }
   }
 
+  const openReject = (mode) => {
+    setRejectMode(mode)
+    setRejectReason('')
+    setRejectModalOpen(true)
+  }
+
   const handleReject = async () => {
     if (!rejectReason.trim()) {
       toast.error('Debes ingresar un motivo de rechazo')
       return
     }
+    const isRevert = rejectMode === 'REVERT'
     setActionLoading(true)
     try {
-      await put(`/admin/registros/${id}/validar`, {
-        accion: 'RECHAZAR',
-        motivo: rejectReason.trim(),
-      })
+      if (isRevert) {
+        await put(`/admin/registros/${id}/revertir`, { motivo: rejectReason.trim() })
+      } else {
+        await put(`/admin/registros/${id}/validar`, {
+          accion: 'RECHAZAR',
+          motivo: rejectReason.trim(),
+        })
+      }
       setRegistration((prev) => ({ ...prev, ESTADO: 'RECHAZADO', MOTIVO_RECHAZO: rejectReason.trim() }))
       setRejectModalOpen(false)
       setRejectReason('')
-      toast.success('Registro rechazado')
-    } catch {
-      toast.error('Error al rechazar el registro')
+      toast.success(isRevert ? 'Registro revertido y cupones anulados' : 'Registro rechazado')
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Error al rechazar el registro')
     } finally {
       setActionLoading(false)
     }
@@ -204,7 +217,7 @@ export default function ClientDetailPage() {
             </Button>
             <Button
               variant="red"
-              onClick={() => setRejectModalOpen(true)}
+              onClick={() => openReject('REJECT')}
               disabled={actionLoading || editing}
               className="flex-1 !py-3"
             >
@@ -409,7 +422,7 @@ export default function ClientDetailPage() {
                 </Button>
                 <Button
                   variant="red"
-                  onClick={() => setRejectModalOpen(true)}
+                  onClick={() => openReject('REJECT')}
                   disabled={actionLoading || editing}
                   className="flex-1"
                 >
@@ -422,6 +435,31 @@ export default function ClientDetailPage() {
                   Guardá o cancelá la edición primero
                 </p>
               )}
+            </motion.div>
+          )}
+
+          {/* Revert an already-accepted registration: reject it + cancel its coupons */}
+          {registration.ESTADO === 'ACEPTADO' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100"
+            >
+              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Acciones</h3>
+              <p className="text-xs text-gray-500 mb-4 leading-snug">
+                Este registro ya fue aceptado. Si fue un error, podés revertirlo: pasará a
+                <span className="font-semibold"> RECHAZADO</span> y se anularán los cupones que generó.
+              </p>
+              <Button
+                variant="red"
+                onClick={() => openReject('REVERT')}
+                disabled={actionLoading}
+                className="w-full"
+              >
+                <XCircle size={18} />
+                Rechazar y anular cupones
+              </Button>
             </motion.div>
           )}
         </div>
@@ -551,9 +589,17 @@ export default function ClientDetailPage() {
       <Modal
         isOpen={rejectModalOpen}
         onClose={() => { setRejectModalOpen(false); setRejectReason('') }}
-        title="Rechazar Registro"
+        title={rejectMode === 'REVERT' ? 'Revertir Registro Aceptado' : 'Rechazar Registro'}
       >
         <div className="space-y-4">
+          {rejectMode === 'REVERT' && (
+            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+              <p className="text-sm text-amber-800">
+                El registro pasará a <span className="font-semibold">RECHAZADO</span> y se
+                anularán todos los cupones que generó. El participante será notificado.
+              </p>
+            </div>
+          )}
           <p className="text-gray-600 text-sm">
             Ingresa el motivo del rechazo. Este sera visible para consultas internas.
           </p>
@@ -582,7 +628,7 @@ export default function ClientDetailPage() {
               onClick={handleReject}
               loading={actionLoading}
             >
-              Confirmar Rechazo
+              {rejectMode === 'REVERT' ? 'Confirmar y Anular Cupones' : 'Confirmar Rechazo'}
             </Button>
           </div>
         </div>
