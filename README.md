@@ -174,7 +174,9 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 | `GET` | `/api/admin/dashboard/mapa` | Distribucion por departamento |
 | `GET` | `/api/admin/registros` | Listar registros (filtros: estado, fecha, busqueda, paginacion) |
 | `GET` | `/api/admin/registros/:id` | Detalle de registro + cupones + participante |
-| `PUT` | `/api/admin/registros/:id/validar` | Aceptar o rechazar registro |
+| `PUT` | `/api/admin/registros/:id/validar` | Aceptar o rechazar registro (solo PENDIENTE) |
+| `PUT` | `/api/admin/registros/:id` | Editar datos de factura (solo PENDIENTE) |
+| `PUT` | `/api/admin/registros/:id/revertir` | Revertir registro ACEPTADO → RECHAZADO y anular sus cupones |
 | `GET` | `/api/admin/participantes` | Listar participantes con totales |
 | `GET` | `/api/admin/participantes/:id` | Detalle participante + registros |
 | `POST` | `/api/admin/participantes/:id/revocar-sesiones` | Invalida todas las sesiones JWT activas del cliente |
@@ -273,6 +275,23 @@ curl -X PUT http://localhost:3001/api/admin/registros/2/validar \
 # → 200 { success: true, data: { estado: "RECHAZADO", cupones: [] } }
 ```
 
+**Revertir registro aceptado (anula sus cupones):**
+```bash
+# Pasa un registro ya ACEPTADO de vuelta a RECHAZADO, elimina los cupones que
+# generó (en una transacción) y notifica al participante por WhatsApp.
+# `motivo` es obligatorio.
+curl -X PUT http://localhost:3001/api/admin/registros/3/revertir \
+  -H "Authorization: Bearer <jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{"motivo":"Aceptado por error - datos de factura no coinciden"}'
+# → 200 { success: true, data: { estado: "RECHAZADO", cuponesAnulados: 2 } }
+#
+# Errores posibles:
+#   400 → falta motivo, o el registro no esta ACEPTADO
+#   404 → registro no encontrado
+#   409 → algun cupon ya resulto ganador o respalda un premio (no borra nada)
+```
+
 **Cambiar contrasena:**
 ```bash
 curl -X PUT http://localhost:3001/api/admin/cambiar-password \
@@ -349,7 +368,15 @@ Oracle Instant Client 19.25 configurado en `/usr/lib/oracle/19.25/client64/`.
    - **Notificacion WhatsApp**: plantilla `ACEPTADO` con la lista de cupones y los premios del mes
 3. **RECHAZAR** → requiere motivo obligatorio
    - **Notificacion WhatsApp**: plantilla `RECHAZADO` con el motivo
-4. Toda accion se registra en `ALLWAYS_ADMIN_LOG`
+4. **ACEPTAR/RECHAZAR** solo aplican a registros `PENDIENTE`
+5. **REVERTIR** (`PUT /registros/:id/revertir`) → corrige una aceptacion equivocada:
+   - Solo sobre registros `ACEPTADO`; pasa el estado a `RECHAZADO` con motivo obligatorio
+   - **Elimina** los cupones que el registro genero (en una transaccion). No hay
+     columna de anulado: cancelar un cupon = borrar la fila de `ALLWAYS_CUPONES`
+   - **Bloqueado (409)** si algun cupon ya resulto ganador (`GANADOR='S'`) o respalda
+     un premio (`ALLWAYS_PREMIOS.CUPON_GANADOR_ID`) — en ese caso no borra nada
+   - **Notificacion WhatsApp**: misma plantilla `RECHAZADO` con el motivo
+6. Toda accion se registra en `ALLWAYS_ADMIN_LOG` (incluye `REVERTIR_REGISTRO`)
 
 ### WhatsApp / Notificaciones automaticas (Evolution API + Baileys)
 
@@ -777,6 +804,17 @@ Las tablas `ALLWAYS_ADMIN_LOG`, `ALLWAYS_CLIENTE_LOG` y `ALLWAYS_WA_LOG_NOTIF` c
 ---
 
 ## Changelog
+
+### v1.5.0 — 2026-06-09 (Revertir registros aceptados)
+
+- **FEAT** Nuevo `PUT /api/admin/registros/:id/revertir`: pasa un registro `ACEPTADO`
+  a `RECHAZADO` y anula (elimina) los cupones que genero, en una transaccion, con
+  motivo obligatorio y notificacion WhatsApp `RECHAZADO`
+- **FEAT** Guard de seguridad: bloquea (409) la reversion si algun cupon ya resulto
+  ganador o respalda un premio
+- **FEAT** Panel: boton "Rechazar y anular cupones" en el detalle de un registro aceptado
+- Antes solo se podian rechazar registros `PENDIENTE`; corregir una aceptacion
+  equivocada requeria intervencion manual en la base de datos
 
 ### v1.4.0 — 2026-04-16 (Campaign Shift + Marketing Admins)
 
