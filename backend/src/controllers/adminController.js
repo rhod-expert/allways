@@ -246,6 +246,102 @@ async function validarRegistro(req, res, next) {
 }
 
 /**
+ * PUT /api/admin/registros/:id/revertir
+ * Revert an already-ACCEPTED registration back to RECHAZADO and cancel
+ * (delete) the coupons it generated. Blocked if any of those coupons is
+ * already a winner or backs a prize. A motivo is mandatory.
+ */
+async function revertirRegistro(req, res, next) {
+  try {
+    const registroId = parseInt(req.params.id, 10);
+    if (Number.isNaN(registroId)) {
+      return res.status(400).json({ success: false, message: 'ID invalido.' });
+    }
+
+    const { motivo } = req.body;
+    if (!motivo || !motivo.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'El motivo de rechazo es obligatorio.'
+      });
+    }
+
+    // Fetch current registration (also brings participant data for the notif)
+    const registroResult = await db.execute(queries.REGISTRO_FIND_BY_ID, {
+      id: registroId
+    });
+
+    if (!registroResult.rows || registroResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Registro no encontrado.' });
+    }
+
+    const registro = registroResult.rows[0];
+
+    if (registro.ESTADO !== 'ACEPTADO') {
+      return res.status(400).json({
+        success: false,
+        message: `Solo se pueden revertir registros aceptados (estado actual: ${registro.ESTADO}).`
+      });
+    }
+
+    // Safety guard: do not delete coupons that already won or back a prize.
+    const bloqueadosResult = await db.execute(
+      queries.CUPON_COUNT_BLOQUEADOS_BY_REGISTRO,
+      { registroId }
+    );
+    const bloqueados = bloqueadosResult.rows[0].TOTAL;
+    if (bloqueados > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'No se puede revertir: uno o mas cupones de este registro ya resultaron ganadores o estan asociados a un premio.'
+      });
+    }
+
+    const motivoRechazo = motivo.trim();
+
+    // Transaction: flip state to RECHAZADO, delete its coupons, log the action.
+    const cuponesAnulados = await db.executeTransaction(async (conn) => {
+      await conn.execute(queries.REGISTRO_UPDATE_ESTADO, {
+        estado: 'RECHAZADO',
+        validadoPor: req.admin.id,
+        motivoRechazo,
+        id: registroId
+      });
+
+      const del = await conn.execute(queries.CUPON_DELETE_BY_REGISTRO, { registroId });
+
+      await conn.execute(queries.ADMIN_LOG_INSERT, {
+        adminId: req.admin.id,
+        accion: 'REVERTIR_REGISTRO',
+        detalle: `Registro #${registroId} revertido de ACEPTADO a RECHAZADO. `
+          + `${del.rowsAffected} cupon(es) anulado(s). Motivo: ${motivoRechazo}`,
+        ip: req.ip || null
+      });
+
+      return del.rowsAffected;
+    });
+
+    // Fire-and-forget WhatsApp notification (same template as a normal rejection)
+    notificationService.notifyRechazado({
+      participante: registro,
+      registro,
+      motivo: motivoRechazo
+    }).catch((e) => console.error('[NOTIF] notifyRechazado fallo:', e.message));
+
+    return res.json({
+      success: true,
+      message: `Registro revertido a rechazado. ${cuponesAnulados} cupon(es) anulado(s).`,
+      data: {
+        estado: 'RECHAZADO',
+        cuponesAnulados
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
  * PUT /api/admin/registros/:id
  * Edit a pending registration's invoice data before approving.
  * Only fields the admin can correct based on the picture: factura number,
@@ -547,6 +643,7 @@ module.exports = {
   listRegistros,
   getRegistro,
   validarRegistro,
+  revertirRegistro,
   editarRegistro,
   listParticipantes,
   getParticipante,

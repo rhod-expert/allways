@@ -37,6 +37,7 @@ router.get('/registros', adminController.listRegistros);
 router.get('/registros/export', adminController.exportRegistros);
 router.get('/registros/:id', adminController.getRegistro);
 router.put('/registros/:id/validar', adminController.validarRegistro);
+router.put('/registros/:id/revertir', adminController.revertirRegistro);
 router.put('/registros/:id', adminController.editarRegistro);
 
 // ---- Participantes ----

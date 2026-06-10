@@ -204,6 +204,25 @@ const CUPON_LIST_BY_REGISTRO = `
   ORDER BY FECHA_GENERACION DESC
 `;
 
+// Count coupons of a registration that are "locked": already a winner
+// (GANADOR = 'S') or referenced as the winning coupon of a premio. Used to
+// block reverting an accepted registration that already produced a prize.
+const CUPON_COUNT_BLOQUEADOS_BY_REGISTRO = `
+  SELECT COUNT(*) AS TOTAL
+  FROM ALLWAYS_CUPONES C
+  WHERE C.REGISTRO_ID = :registroId
+    AND (
+      C.GANADOR = 'S'
+      OR EXISTS (
+        SELECT 1 FROM ALLWAYS_PREMIOS PR WHERE PR.CUPON_GANADOR_ID = C.ID
+      )
+    )
+`;
+
+const CUPON_DELETE_BY_REGISTRO = `
+  DELETE FROM ALLWAYS_CUPONES WHERE REGISTRO_ID = :registroId
+`;
+
 const CUPON_LIST_ALL = `
   SELECT C.ID, C.NUMERO_CUPON, C.MES_SORTEO, C.FECHA_GENERACION, C.GANADOR,
          P.NOMBRE, P.CEDULA,
@@ -816,6 +835,8 @@ module.exports = {
   CUPON_FIND_BY_CODIGO,
   CUPON_LIST_BY_CEDULA,
   CUPON_LIST_BY_REGISTRO,
+  CUPON_COUNT_BLOQUEADOS_BY_REGISTRO,
+  CUPON_DELETE_BY_REGISTRO,
   CUPON_LIST_ALL,
   CUPON_LIST_ALL_COUNT,
   PREMIO_LIST,
