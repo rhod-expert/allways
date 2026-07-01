@@ -8,6 +8,7 @@ import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import ImageDropzone from '../components/form/ImageDropzone'
 import WhatsAppSAC from '../components/ui/WhatsAppSAC'
+import CouponReleaseNotice from '../components/ui/CouponReleaseNotice'
 import useApi from '../hooks/useApi'
 import useGeo from '../hooks/useGeo'
 import { validateRegistrationForm } from '../utils/validators'
@@ -265,6 +266,9 @@ export default function RegisterPage() {
                 Completa tus datos y subi la foto de tu factura para participar del sorteo.
               </p>
             </div>
+
+            {/* Coupon release notice */}
+            <CouponReleaseNotice className="mb-8" />
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Personal info */}
@@ -527,8 +531,9 @@ export default function RegisterPage() {
               {registrationNumber}
             </span>
           </div>
+          <CouponReleaseNotice className="mb-6 text-left" />
           <p className="text-sm text-gray-400 mb-6">
-            Tu registro sera verificado por nuestro equipo. Podes consultar el estado en la seccion "Mis Cupones".
+            Podes consultar el estado en la seccion "Mis Cupones".
           </p>
           <div className="flex gap-3 justify-center">
             <Button variant="outline" onClick={() => setShowSuccess(false)}>
