@@ -186,6 +186,11 @@ export default function RulesPage() {
             El ganador tendrá un plazo improrrogable de 60 días posteriores a la fecha del sorteo para retirar el premio, y a tal efecto deberá presentarse en el lugar indicado por el ORGANIZADOR. Asimismo, deberá presentar al responsable del sorteo su documento de identidad correspondiente, el que será cotejado con el cupón ganador, debiendo coincidir todos los datos.
           </p>
 
+          <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">Artículo 11 bis. Plazo de entrega del premio</h2>
+          <p className="text-gray-600 leading-relaxed mb-4">
+            Una vez realizada la validación de los datos del ganador y cumplidos todos los requisitos establecidos en estas bases, el ORGANIZADOR hará entrega del premio correspondiente. El plazo para dicha entrega podrá variar de 10 días hábiles, contados a partir de la fecha en que el ganador se haya presentado y cumplido formalmente con el proceso de retiro establecido.
+          </p>
+
           <h2 className="text-xl font-bold text-allways-navy mt-8 mb-3">Artículo 12. Premios vacantes</h2>
           <p className="text-gray-600 leading-relaxed mb-4">
             Cumplido el plazo sin que se haya presentado el ganador, el premio será destinado al financiamiento del FONARESS, conforme a lo establecido en la Ley 6703/20.
