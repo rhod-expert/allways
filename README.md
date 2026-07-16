@@ -387,9 +387,17 @@ formatRuc('AB123456');  // null — una C. Extranjeria no tiene RUC
 ```
 
 Ya esta expuesto en el **export Excel** (columna `RUC`, junto a `CI/CE`, en las
-hojas Clientes y Registros) y en el **detalle de participante del admin**
-(`GET /api/admin/participantes/:id` devuelve el campo calculado `RUC`). En una
-C. Extranjeria la columna queda vacia y el campo llega en `null`.
+hojas Clientes y Registros), en el **listado** y en el **detalle** de
+participantes del admin — ambos endpoints devuelven el campo calculado `RUC`
+junto a `CEDULA`. En una C. Extranjeria la columna queda vacia y el campo llega
+en `null`.
+
+Como el admin ve el RUC, **la busqueda tambien lo acepta**: el termino se
+normaliza contra `CEDULA` (`cedulaSearchTerm`), asi que pegar `4836971-3` en el
+buscador encuentra al participante guardado como `4836971`. Aplica en el listado
+y export de participantes, el listado y export de registros, y el listado de
+cupones. Los filtros por nombre, factura y numero de cupon usan binds propios y
+no se ven afectados.
 
 `calcDV()` **no se usa para validar**: fue verificado contra un solo RUC real, y
 rechazar un documento por DV "incorrecto" reintroduciria el bug que este campo ya

@@ -66,4 +66,16 @@ function formatRuc(cedula) {
   return `${key}-${calcDV(key)}`;
 }
 
-module.exports = { normalizeCedula, isValidCedula, calcDV, formatRuc };
+/**
+ * Build the LIKE term for a CEDULA search. The admin sees the computed RUC, so
+ * pasting it into a search box must find the CI it was normalized to on save.
+ * Falls back to the raw text so partial input still matches.
+ * @param {string} raw - Search box contents.
+ * @returns {string} Term to wrap in `%...%`.
+ */
+function cedulaSearchTerm(raw) {
+  const s = String(raw || '').trim();
+  return normalizeCedula(s) || s;
+}
+
+module.exports = { normalizeCedula, isValidCedula, calcDV, formatRuc, cedulaSearchTerm };

@@ -3,6 +3,7 @@
 const couponService = require('../services/couponService');
 const db = require('../config/database');
 const queries = require('../models/queries');
+const { cedulaSearchTerm } = require('../utils/cedula');
 
 /**
  * POST /api/cupones/consulta
@@ -54,7 +55,7 @@ async function listCupones(req, res, next) {
       const searchFilter = ` AND (P.CEDULA LIKE :search OR UPPER(P.NOMBRE) LIKE :searchName OR C.NUMERO_CUPON LIKE :searchCupon)`;
       countSql += searchFilter;
       listSql += searchFilter;
-      binds.search = `%${search.trim()}%`;
+      binds.search = `%${cedulaSearchTerm(search)}%`;
       binds.searchName = `%${search.trim().toUpperCase()}%`;
       binds.searchCupon = `%${search.trim().toUpperCase()}%`;
     }
