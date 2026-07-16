@@ -47,8 +47,33 @@ partido a una persona en dos participantes con los cupones divididos entre ambos
 con 5). Tambien rompia la consulta de cupones: quien se registraba con RUC no se
 encontraba tipeando su CI.
 
-Se opto por **normalizar a la CI al guardar**. Fiscalmente el RUC se pierde, pero
-para un sorteo lo unico que importa es identificar a la persona, y la CI ya lo hace.
+Se opto por **normalizar a la CI al guardar**.
+
+### El digito verificador no se pierde: se calcula
+
+La preocupacion inicial era perder valor fiscal al descartar el DV. No aplica: el
+DV es un **checksum base-11 de la propia CI**, no informacion independiente. Se
+verifico contra el RUC real del reclamo — `4836971` → DV `3`, exacto. (El
+`80012345-6` del prompt original no coincide porque era un ejemplo inventado; su
+DV real seria `0`.)
+
+Por eso **no se agrego ninguna columna**: ni `RUC_DV` ni `DOCUMENTO_ORIGINAL`
+serian dato nuevo, solo dato derivable que habria que mantener sincronizado.
+Guardarlo en el mismo campo `CEDULA` estaba descartado de entrada: es la clave
+UNIQUE del participante y volveria a partir a la persona en dos identidades.
+
+`formatRuc()` reconstruye el RUC cuando haga falta, y el round-trip es estable:
+
+```js
+formatRuc('4836971-3');  // '4836971-3'  (se guarda '4836971')
+formatRuc('AB123456');   // null — una C. Extranjeria no tiene RUC
+```
+
+**`calcDV` no valida input a proposito.** Se verifico contra una sola muestra:
+coincidir por azar es 1 en 11, asi que la confianza es alta pero no certeza.
+Alcanza para generar un RUC en un acta que un humano revisa; no para rechazar
+registros. Rechazar por DV "incorrecto" con un algoritmo con variantes que
+desconocemos reintroduciria exactamente el bug que este fix corrige.
 
 ## Solucion
 

@@ -376,6 +376,21 @@ colapsan al **mismo participante** y sus cupones se acumulan en un solo registro
 La normalizacion vive en el backend (no solo en el form) porque la API es publica:
 aplica en registro, consulta de cupones y login del area de cliente.
 
+**El digito verificador no se guarda: se calcula.** Es un checksum base-11 de la
+propia CI, asi que descartarlo no pierde informacion. Para reconstruir el RUC
+completo (ej.: acta de entrega de premio) hay `formatRuc()`:
+
+```js
+const { formatRuc } = require('./utils/cedula');
+formatRuc('4836971');   // '4836971-3'
+formatRuc('AB123456');  // null — una C. Extranjeria no tiene RUC
+```
+
+`calcDV()` **no se usa para validar**: fue verificado contra un solo RUC real, y
+rechazar un documento por DV "incorrecto" reintroduciria el bug que este campo ya
+tuvo. Si en algun momento se valida contra un set amplio de RUCs reales, ahi si
+puede pasar a rechazar tipeos.
+
 ### Validacion de Registro (admin)
 1. Admin ve factura en detalle ampliado
 2. **ACEPTAR** → genera N cupones (1 por producto declarado)
