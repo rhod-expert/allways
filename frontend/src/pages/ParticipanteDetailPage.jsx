@@ -77,7 +77,10 @@ export default function ParticipanteDetailPage() {
         </Link>
         <div className="min-w-0">
           <h2 className="text-lg sm:text-2xl font-black text-gray-800 truncate">{participant.NOMBRE}</h2>
-          <p className="text-gray-500 text-xs sm:text-sm">CI/RUC: {participant.CEDULA}</p>
+          <p className="text-gray-500 text-xs sm:text-sm">
+            CI/CE: {participant.CEDULA}
+            {participant.RUC && <span className="ml-2 text-gray-400">RUC: {participant.RUC}</span>}
+          </p>
         </div>
       </div>
 
@@ -98,7 +101,10 @@ export default function ParticipanteDetailPage() {
           <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Datos Personales</h3>
           <div className="space-y-3">
             <InfoRow icon={User} label="Nombre completo" value={participant.NOMBRE} />
-            <InfoRow icon={FileText} label="CI/RUC o C. Extranjeria" value={participant.CEDULA} mono />
+            <InfoRow icon={FileText} label="CI o C. Extranjeria" value={participant.CEDULA} mono />
+            {participant.RUC && (
+              <InfoRow icon={FileText} label="RUC" value={participant.RUC} mono />
+            )}
             <InfoRow icon={Phone} label="Telefono" value={participant.TELEFONO} />
             {participant.EMAIL && (
               <InfoRow icon={Mail} label="Email" value={participant.EMAIL} />

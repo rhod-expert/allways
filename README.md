@@ -386,6 +386,11 @@ formatRuc('4836971');   // '4836971-3'
 formatRuc('AB123456');  // null — una C. Extranjeria no tiene RUC
 ```
 
+Ya esta expuesto en el **export Excel** (columna `RUC`, junto a `CI/CE`, en las
+hojas Clientes y Registros) y en el **detalle de participante del admin**
+(`GET /api/admin/participantes/:id` devuelve el campo calculado `RUC`). En una
+C. Extranjeria la columna queda vacia y el campo llega en `null`.
+
 `calcDV()` **no se usa para validar**: fue verificado contra un solo RUC real, y
 rechazar un documento por DV "incorrecto" reintroduciria el bug que este campo ya
 tuvo. Si en algun momento se valida contra un set amplio de RUCs reales, ahi si

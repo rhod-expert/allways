@@ -5,6 +5,7 @@ const queries = require('../models/queries');
 const couponService = require('../services/couponService');
 const notificationService = require('../services/notificationService');
 const excelExport = require('../services/excelExportService');
+const { formatRuc } = require('../utils/cedula');
 
 const EXPORT_MAX_ROWS = 50000;
 const EXPORT_TS = () => {
@@ -498,6 +499,7 @@ async function getParticipante(req, res, next) {
       success: true,
       data: {
         ...participante,
+        RUC: formatRuc(participante.CEDULA),
         registros
       }
     });

@@ -1,6 +1,7 @@
 'use strict';
 
 const ExcelJS = require('exceljs');
+const { formatRuc } = require('../utils/cedula');
 
 const HEADER_FILL = {
   type: 'pattern',
@@ -81,7 +82,8 @@ async function buildParticipantesXlsx(rows, meta = {}) {
   sheet.columns = [
     { header: 'ID',              key: 'id',             width: 8  },
     { header: 'Nombre',          key: 'nombre',         width: 32 },
-    { header: 'CI/RUC/CE',       key: 'cedula',         width: 14 },
+    { header: 'CI/CE',           key: 'cedula',         width: 14 },
+    { header: 'RUC',             key: 'ruc',            width: 14 },
     { header: 'Teléfono',        key: 'telefono',       width: 16 },
     { header: 'Email',           key: 'email',          width: 30 },
     { header: 'Departamento',    key: 'departamento',   width: 18 },
@@ -103,6 +105,7 @@ async function buildParticipantesXlsx(rows, meta = {}) {
       id: r.ID,
       nombre: r.NOMBRE || '',
       cedula: r.CEDULA || '',
+      ruc: formatRuc(r.CEDULA) || '',
       telefono: r.TELEFONO || '',
       email: r.EMAIL || '',
       departamento: r.GEO_DEPARTAMENTO || r.DEPARTAMENTO || '',
@@ -155,7 +158,8 @@ async function buildRegistrosXlsx(rows, meta = {}) {
     { header: 'ID',                key: 'id',            width: 8  },
     { header: 'Estado',            key: 'estado',        width: 12 },
     { header: 'Nombre',            key: 'nombre',        width: 32 },
-    { header: 'CI/RUC/CE',         key: 'cedula',        width: 14 },
+    { header: 'CI/CE',             key: 'cedula',        width: 14 },
+    { header: 'RUC',               key: 'ruc',           width: 14 },
     { header: 'Teléfono',          key: 'telefono',      width: 16 },
     { header: 'Email',             key: 'email',         width: 30 },
     { header: 'N° Factura/Ticket', key: 'factura',       width: 22 },
@@ -178,6 +182,7 @@ async function buildRegistrosXlsx(rows, meta = {}) {
       estado: r.ESTADO || '',
       nombre: r.NOMBRE || '',
       cedula: r.CEDULA || '',
+      ruc: formatRuc(r.CEDULA) || '',
       telefono: r.TELEFONO || '',
       email: r.EMAIL || '',
       factura: r.NUMERO_FACTURA || '',
