@@ -2,6 +2,7 @@
 
 const db = require('../config/database');
 const queries = require('../models/queries');
+const { normalizeCedula } = require('../utils/cedula');
 
 /**
  * Spanish month names for MES_SORTEO.
@@ -74,10 +75,13 @@ async function consultarPorCedula(cedula) {
     throw Object.assign(new Error('La cedula es obligatoria.'), { statusCode: 400 });
   }
 
+  // Participants are keyed by CI, so a RUC finds the same record.
+  const cedulaKey = normalizeCedula(cedula);
+
   // Get participant info
   const participanteResult = await db.execute(
     queries.PARTICIPANTE_FIND_BY_CEDULA,
-    { cedula: cedula.trim() }
+    { cedula: cedulaKey }
   );
 
   if (!participanteResult.rows || participanteResult.rows.length === 0) {
@@ -97,7 +101,7 @@ async function consultarPorCedula(cedula) {
   // Get coupons
   const cuponesResult = await db.execute(
     queries.CUPON_LIST_BY_CEDULA,
-    { cedula: cedula.trim() }
+    { cedula: cedulaKey }
   );
 
   return {

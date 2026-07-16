@@ -355,10 +355,26 @@ Oracle Instant Client 19.25 configurado en `/usr/lib/oracle/19.25/client64/`.
 1. reCAPTCHA v3 verifica que no es un bot
 2. Campos de texto se sanitizan (strip HTML tags)
 3. Imagenes se validan con Sharp (MIME real, max 1920px ancho, solo JPG/PNG)
-4. Si cedula ya existe, se vincula al participante existente
-5. Se crea registro con estado `PENDIENTE` (transaccion Oracle)
-6. Archivos se guardan en `uploads/facturas/` y `uploads/productos/` con nombre UUID
-7. **Notificacion WhatsApp** (fire-and-forget): plantilla `RECIBIDO` al telefono del participante
+4. El documento se normaliza a la CI (ver "Documento del participante") antes de buscar
+5. Si cedula ya existe, se vincula al participante existente
+6. Se crea registro con estado `PENDIENTE` (transaccion Oracle)
+7. Archivos se guardan en `uploads/facturas/` y `uploads/productos/` con nombre UUID
+8. **Notificacion WhatsApp** (fire-and-forget): plantilla `RECIBIDO` al telefono del participante
+
+### Documento del participante (CI / RUC / C. Extranjeria)
+El campo acepta tres formatos y los **normaliza a la CI** antes de tocar la base
+(`backend/src/utils/cedula.js`, espejado en `frontend/src/utils/validators.js`):
+
+| Formato | Ejemplo | Se guarda como |
+|---|---|---|
+| CI (5-8 digitos) | `4836971` | `4836971` |
+| RUC (CI + digito verificador) | `4836971-3` | `4836971` |
+| C. Extranjeria (alfanumerico, min. 1 letra) | `AB123456` | `AB123456` (uppercase) |
+
+Un RUC paraguayo es la CI del titular mas un digito verificador, asi que ambos
+colapsan al **mismo participante** y sus cupones se acumulan en un solo registro.
+La normalizacion vive en el backend (no solo en el form) porque la API es publica:
+aplica en registro, consulta de cupones y login del area de cliente.
 
 ### Validacion de Registro (admin)
 1. Admin ve factura en detalle ampliado

@@ -11,7 +11,7 @@ import WhatsAppSAC from '../components/ui/WhatsAppSAC'
 import CouponReleaseNotice from '../components/ui/CouponReleaseNotice'
 import useApi from '../hooks/useApi'
 import useGeo from '../hooks/useGeo'
-import { validateRegistrationForm } from '../utils/validators'
+import { validateRegistrationForm, normalizeCedula } from '../utils/validators'
 
 const initialForm = {
   nombre: '',
@@ -197,7 +197,7 @@ export default function RegisterPage() {
     try {
       const formData = new FormData()
       formData.append('nombre', form.nombre.trim())
-      formData.append('cedula', form.cedula.replace(/\./g, '').trim())
+      formData.append('cedula', normalizeCedula(form.cedula))
       formData.append('telefono', form.telefono.trim())
       formData.append('email', form.email.trim())
       // Send both text names and IDs
@@ -291,10 +291,9 @@ export default function RegisterPage() {
                       name="cedula"
                       value={form.cedula}
                       onChange={handleChange}
-                      placeholder="Ej: 4123456"
+                      placeholder="Ej: 4123456 o 4123456-7"
                       error={errors.cedula}
                       required
-                      inputMode="numeric"
                     />
                     <Input
                       label="Telefono"

@@ -8,6 +8,7 @@ const config = require('../config/env');
 const db = require('../config/database');
 const queries = require('../models/queries');
 const notificationService = require('./notificationService');
+const { normalizeCedula } = require('../utils/cedula');
 
 const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
@@ -79,7 +80,7 @@ async function logEvent({ participanteId = null, cedula = null, evento, exitoso 
 
 async function findByCedulaForAuth(cedula) {
   const r = await db.execute(queries.CLIENTE_FIND_BY_CEDULA_AUTH, {
-    cedula: String(cedula || '').trim()
+    cedula: normalizeCedula(cedula)
   });
   return r.rows?.[0] || null;
 }

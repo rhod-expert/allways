@@ -8,6 +8,7 @@ const db = require('../config/database');
 const queries = require('../models/queries');
 const config = require('../config/env');
 const notificationService = require('./notificationService');
+const { normalizeCedula, isValidCedula } = require('../utils/cedula');
 
 const MAX_WIDTH = 1920;
 
@@ -81,6 +82,12 @@ async function register(data, files) {
   if (!tienda || !tienda.trim()) {
     throw Object.assign(new Error('El nombre de la tienda / punto de venta es obligatorio.'), { statusCode: 400 });
   }
+  if (!isValidCedula(cedula)) {
+    throw Object.assign(new Error('Ingrese una CI (5-8 digitos), RUC (ej: 4836971-3) o C. Extranjeria valida.'), { statusCode: 400 });
+  }
+
+  // A RUC is the holder's CI plus a check digit: collapse both to one participant.
+  const cedulaKey = normalizeCedula(cedula);
 
   // Validate factura image is present
   if (!files || !files.imagenFactura || files.imagenFactura.length === 0) {
@@ -108,7 +115,7 @@ async function register(data, files) {
     // Check if participant already exists
     const existingResult = await connection.execute(
       queries.PARTICIPANTE_FIND_BY_CEDULA,
-      { cedula: cedula.trim() }
+      { cedula: cedulaKey }
     );
 
     let participanteId;
@@ -124,7 +131,7 @@ async function register(data, files) {
         queries.PARTICIPANTE_INSERT,
         {
           nombre: stripHtml(nombre),
-          cedula: cedula.trim(),
+          cedula: cedulaKey,
           telefono: telefono.trim(),
           email: (email || '').trim() || null,
           departamento: stripHtml(departamento || '') || null,

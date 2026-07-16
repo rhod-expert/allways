@@ -6,7 +6,7 @@ import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import useApi from '../hooks/useApi'
-import { validateCedula } from '../utils/validators'
+import { validateCedula, normalizeCedula } from '../utils/validators'
 import GoldParticles from '../components/landing/GoldParticles'
 
 export default function CouponCheckPage() {
@@ -26,8 +26,7 @@ export default function CouponCheckPage() {
     setCedulaError(null)
 
     try {
-      const cleanCedula = cedula.replace(/\./g, '').trim()
-      const result = await post('/cupones/consulta', { cedula: cleanCedula })
+      const result = await post('/cupones/consulta', { cedula: normalizeCedula(cedula) })
       setCoupons(result.data?.cupones || [])
       setSearched(true)
     } catch (error) {

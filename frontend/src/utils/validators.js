@@ -1,10 +1,34 @@
+// CI: 5-8 digitos. RUC: CI + digito verificador. C. Extranjeria: alfanumerico
+// con al menos una letra (sin letra seria una CI y debe cumplir el largo).
+const CI_RE = /^\d{5,8}$/
+const RUC_RE = /^(\d{5,8})-\d$/
+const EXTRANJERIA_RE = /^(?=.*[A-Z])[A-Z0-9]{5,15}$/
+
+function cleanCedula(cedula) {
+  return String(cedula || '').replace(/[.\s]/g, '').trim().toUpperCase()
+}
+
 /**
- * Validates a Paraguayan cedula (numeric, 5-8 digits)
+ * Normalizes a document to its participant identity key.
+ * A Paraguayan RUC is the holder's CI plus a check digit, so both collapse to
+ * the same participant and their coupons stay on a single record.
+ */
+export function normalizeCedula(cedula) {
+  const cleaned = cleanCedula(cedula)
+  if (!cleaned) return ''
+  const ruc = cleaned.match(RUC_RE)
+  return ruc ? ruc[1] : cleaned
+}
+
+/**
+ * Validates a Paraguayan CI, RUC or C. Extranjeria
  */
 export function validateCedula(cedula) {
   if (!cedula || typeof cedula !== 'string') return 'La cedula es requerida'
-  const cleaned = cedula.replace(/\./g, '').trim()
-  if (!/^\d{5,8}$/.test(cleaned)) return 'La cedula debe tener entre 5 y 8 digitos numericos'
+  const cleaned = cleanCedula(cedula)
+  if (!CI_RE.test(cleaned) && !RUC_RE.test(cleaned) && !EXTRANJERIA_RE.test(cleaned)) {
+    return 'Ingrese una CI (5-8 digitos), RUC (ej: 4836971-3) o C. Extranjeria valida'
+  }
   return null
 }
 
