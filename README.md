@@ -355,10 +355,54 @@ Oracle Instant Client 19.25 configurado en `/usr/lib/oracle/19.25/client64/`.
 1. reCAPTCHA v3 verifica que no es un bot
 2. Campos de texto se sanitizan (strip HTML tags)
 3. Imagenes se validan con Sharp (MIME real, max 1920px ancho, solo JPG/PNG)
-4. Si cedula ya existe, se vincula al participante existente
-5. Se crea registro con estado `PENDIENTE` (transaccion Oracle)
-6. Archivos se guardan en `uploads/facturas/` y `uploads/productos/` con nombre UUID
-7. **Notificacion WhatsApp** (fire-and-forget): plantilla `RECIBIDO` al telefono del participante
+4. El documento se normaliza a la CI (ver "Documento del participante") antes de buscar
+5. Si cedula ya existe, se vincula al participante existente
+6. Se crea registro con estado `PENDIENTE` (transaccion Oracle)
+7. Archivos se guardan en `uploads/facturas/` y `uploads/productos/` con nombre UUID
+8. **Notificacion WhatsApp** (fire-and-forget): plantilla `RECIBIDO` al telefono del participante
+
+### Documento del participante (CI / RUC / C. Extranjeria)
+El campo acepta tres formatos y los **normaliza a la CI** antes de tocar la base
+(`backend/src/utils/cedula.js`, espejado en `frontend/src/utils/validators.js`):
+
+| Formato | Ejemplo | Se guarda como |
+|---|---|---|
+| CI (5-8 digitos) | `4836971` | `4836971` |
+| RUC (CI + digito verificador) | `4836971-3` | `4836971` |
+| C. Extranjeria (alfanumerico, min. 1 letra) | `AB123456` | `AB123456` (uppercase) |
+
+Un RUC paraguayo es la CI del titular mas un digito verificador, asi que ambos
+colapsan al **mismo participante** y sus cupones se acumulan en un solo registro.
+La normalizacion vive en el backend (no solo en el form) porque la API es publica:
+aplica en registro, consulta de cupones y login del area de cliente.
+
+**El digito verificador no se guarda: se calcula.** Es un checksum base-11 de la
+propia CI, asi que descartarlo no pierde informacion. Para reconstruir el RUC
+completo (ej.: acta de entrega de premio) hay `formatRuc()`:
+
+```js
+const { formatRuc } = require('./utils/cedula');
+formatRuc('4836971');   // '4836971-3'
+formatRuc('AB123456');  // null — una C. Extranjeria no tiene RUC
+```
+
+Ya esta expuesto en el **export Excel** (columna `RUC`, junto a `CI/CE`, en las
+hojas Clientes y Registros), en el **listado** y en el **detalle** de
+participantes del admin — ambos endpoints devuelven el campo calculado `RUC`
+junto a `CEDULA`. En una C. Extranjeria la columna queda vacia y el campo llega
+en `null`.
+
+Como el admin ve el RUC, **la busqueda tambien lo acepta**: el termino se
+normaliza contra `CEDULA` (`cedulaSearchTerm`), asi que pegar `4836971-3` en el
+buscador encuentra al participante guardado como `4836971`. Aplica en el listado
+y export de participantes, el listado y export de registros, y el listado de
+cupones. Los filtros por nombre, factura y numero de cupon usan binds propios y
+no se ven afectados.
+
+`calcDV()` **no se usa para validar**: fue verificado contra un solo RUC real, y
+rechazar un documento por DV "incorrecto" reintroduciria el bug que este campo ya
+tuvo. Si en algun momento se valida contra un set amplio de RUCs reales, ahi si
+puede pasar a rechazar tipeos.
 
 ### Validacion de Registro (admin)
 1. Admin ve factura en detalle ampliado

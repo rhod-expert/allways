@@ -5,6 +5,7 @@ const queries = require('../models/queries');
 const couponService = require('../services/couponService');
 const notificationService = require('../services/notificationService');
 const excelExport = require('../services/excelExportService');
+const { formatRuc, cedulaSearchTerm } = require('../utils/cedula');
 
 const EXPORT_MAX_ROWS = 50000;
 const EXPORT_TS = () => {
@@ -64,7 +65,7 @@ async function listRegistros(req, res, next) {
       const searchFilter = ` AND (P.CEDULA LIKE :search OR UPPER(P.NOMBRE) LIKE :searchUpper OR R.NUMERO_FACTURA LIKE :searchFactura)`;
       countSql += searchFilter;
       listSql += searchFilter;
-      binds.search = `%${search.trim()}%`;
+      binds.search = `%${cedulaSearchTerm(search)}%`;
       binds.searchUpper = `%${search.trim().toUpperCase()}%`;
       binds.searchFactura = `%${search.trim()}%`;
     }
@@ -424,7 +425,7 @@ async function listParticipantes(req, res, next) {
       const searchFilter = ` AND (P.CEDULA LIKE :search OR UPPER(P.NOMBRE) LIKE :searchUpper)`;
       countSql += ` AND (CEDULA LIKE :search OR UPPER(NOMBRE) LIKE :searchUpper)`;
       listSql += searchFilter;
-      binds.search = `%${search.trim()}%`;
+      binds.search = `%${cedulaSearchTerm(search)}%`;
       binds.searchUpper = `%${search.trim().toUpperCase()}%`;
     }
 
@@ -444,7 +445,7 @@ async function listParticipantes(req, res, next) {
 
     return res.json({
       success: true,
-      data: listResult.rows || [],
+      data: (listResult.rows || []).map((r) => ({ ...r, RUC: formatRuc(r.CEDULA) })),
       pagination: {
         page,
         limit,
@@ -498,6 +499,7 @@ async function getParticipante(req, res, next) {
       success: true,
       data: {
         ...participante,
+        RUC: formatRuc(participante.CEDULA),
         registros
       }
     });
@@ -558,7 +560,7 @@ async function exportRegistros(req, res, next) {
     }
     if (search && search.trim()) {
       sql += ` AND (P.CEDULA LIKE :search OR UPPER(P.NOMBRE) LIKE :searchUpper OR R.NUMERO_FACTURA LIKE :searchFactura)`;
-      binds.search = `%${search.trim()}%`;
+      binds.search = `%${cedulaSearchTerm(search)}%`;
       binds.searchUpper = `%${search.trim().toUpperCase()}%`;
       binds.searchFactura = `%${search.trim()}%`;
     }
@@ -605,7 +607,7 @@ async function exportParticipantes(req, res, next) {
 
     if (search && search.trim()) {
       sql += ` AND (P.CEDULA LIKE :search OR UPPER(P.NOMBRE) LIKE :searchUpper)`;
-      binds.search = `%${search.trim()}%`;
+      binds.search = `%${cedulaSearchTerm(search)}%`;
       binds.searchUpper = `%${search.trim().toUpperCase()}%`;
     }
 

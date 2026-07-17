@@ -164,7 +164,10 @@ export default function ParticipantesPage() {
                   <div className="flex items-start justify-between mb-2">
                     <div className="min-w-0">
                       <p className="font-bold text-gray-800 truncate">{p.NOMBRE}</p>
-                      <p className="text-xs text-gray-400 font-mono">{p.CEDULA}</p>
+                      <p className="text-xs text-gray-400 font-mono">
+                        {p.CEDULA}
+                        {p.RUC && <span className="ml-2 text-gray-300">{p.RUC}</span>}
+                      </p>
                     </div>
                     <div className="flex gap-2 flex-shrink-0 ml-2">
                       <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-lg font-semibold">
@@ -196,7 +199,7 @@ export default function ParticipantesPage() {
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
                     <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Nombre</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">CI/RUC/CE</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">CI/CE · RUC</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Telefono</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Ubicacion</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Direccion</th>
@@ -213,7 +216,10 @@ export default function ParticipantesPage() {
                           {p.NOMBRE}
                         </Link>
                       </td>
-                      <td className="py-3 px-4 font-mono text-xs text-gray-600">{p.CEDULA}</td>
+                      <td className="py-3 px-4 font-mono text-xs text-gray-600">
+                        {p.CEDULA}
+                        {p.RUC && <span className="block text-gray-400">{p.RUC}</span>}
+                      </td>
                       <td className="py-3 px-4 text-gray-600">{p.TELEFONO}</td>
                       <td className="py-3 px-4 text-gray-500 text-xs max-w-[200px] truncate">{buildLocation(p)}</td>
                       <td className="py-3 px-4 text-gray-500 text-xs max-w-[180px] truncate">{buildAddress(p)}</td>
