@@ -3,6 +3,8 @@ import api from '../services/api'
 
 export const AuthContext = createContext(null)
 
+export const ROL_VISUALIZADOR = 'VISUALIZADOR'
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(null)
@@ -41,8 +43,16 @@ export function AuthProvider({ children }) {
 
   const isAuthenticated = !!token && !!user
 
+  // Read-only account: the panel hides every action button for these users.
+  // This is presentation only — the backend enforces the same rule on every
+  // mutating endpoint (middleware/roles.js).
+  const isVisualizador = String(user?.rol || '').toUpperCase() === ROL_VISUALIZADOR
+  const canWrite = isAuthenticated && !isVisualizador
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, isAuthenticated }}>
+    <AuthContext.Provider
+      value={{ user, token, loading, login, logout, isAuthenticated, isVisualizador, canWrite }}
+    >
       {children}
     </AuthContext.Provider>
   )

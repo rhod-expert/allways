@@ -21,10 +21,12 @@ import Button from '../components/ui/Button'
 import Spinner from '../components/ui/Spinner'
 import Modal from '../components/ui/Modal'
 import useApi from '../hooks/useApi'
+import useAuth from '../hooks/useAuth'
 
 export default function SorteoDetallePage() {
   const { mes } = useParams()
   const { get, post, del } = useApi()
+  const { canWrite } = useAuth()
 
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -123,7 +125,7 @@ export default function SorteoDetallePage() {
         </div>
 
         <div className="flex gap-2">
-          {sorteado ? (
+          {!canWrite ? null : sorteado ? (
             <Button
               variant="ghost"
               onClick={() => setConfirmModal('reset')}

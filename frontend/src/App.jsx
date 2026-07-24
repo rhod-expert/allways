@@ -1,7 +1,7 @@
 import { Routes, Route } from 'react-router'
 import Header from './components/layout/Header'
 import Footer from './components/layout/Footer'
-import AdminLayout from './components/layout/AdminLayout'
+import AdminLayout, { WriteOnlyRoute } from './components/layout/AdminLayout'
 import HomePage from './pages/HomePage'
 import RegisterPage from './pages/RegisterPage'
 import CouponCheckPage from './pages/CouponCheckPage'
@@ -62,7 +62,14 @@ export default function App() {
         <Route path="registros/:id" element={<ClientDetailPage />} />
         <Route path="sorteos" element={<SorteosPage />} />
         <Route path="sorteos/:mes" element={<SorteoDetallePage />} />
-        <Route path="whatsapp" element={<WhatsAppPage />} />
+        <Route
+          path="whatsapp"
+          element={
+            <WriteOnlyRoute>
+              <WhatsAppPage />
+            </WriteOnlyRoute>
+          }
+        />
       </Route>
 
       {/* Cliente Area - public auth flows */}

@@ -10,6 +10,7 @@ const couponController = require('../controllers/couponController');
 const sorteoController = require('../controllers/sorteoController');
 const whatsappController = require('../controllers/whatsappController');
 const { verifyToken } = require('../middleware/auth');
+const { restrictVisualizador } = require('../middleware/roles');
 const { adminLimiter, loginLimiter } = require('../middleware/rateLimiter');
 
 /**
@@ -22,6 +23,9 @@ router.post('/login', loginLimiter, authController.login);
 // ---- All routes below require JWT authentication ----
 router.use(verifyToken);
 router.use(adminLimiter);
+// Read-only accounts (ROL = VISUALIZADOR) are blocked from every mutating
+// verb below, regardless of what the UI shows. See middleware/roles.js.
+router.use(restrictVisualizador);
 
 // ---- Password change ----
 router.put('/cambiar-password', authController.changePassword);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Outlet, Link, useLocation, useNavigate } from 'react-router'
+import { Outlet, Link, Navigate, useLocation, useNavigate } from 'react-router'
 import {
   LayoutDashboard,
   Users,
@@ -10,20 +10,34 @@ import {
   Menu,
   X,
   ChevronLeft,
+  Eye,
 } from 'lucide-react'
 import useAuth from '../../hooks/useAuth'
 import Spinner from '../ui/Spinner'
 
+// writeOnly: sections whose whole purpose is performing actions. Hidden from
+// read-only (VISUALIZADOR) accounts.
 const sidebarLinks = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/clientes', label: 'Clientes', icon: Users },
   { to: '/admin/registros', label: 'Registros', icon: FileText },
   { to: '/admin/sorteos', label: 'Sorteos', icon: Trophy },
-  { to: '/admin/whatsapp', label: 'WhatsApp', icon: MessageCircle },
+  { to: '/admin/whatsapp', label: 'WhatsApp', icon: MessageCircle, writeOnly: true },
 ]
 
+/**
+ * Guards admin sections that only make sense for accounts able to write.
+ * A VISUALIZADOR reaching one of these URLs directly lands on the dashboard.
+ */
+export function WriteOnlyRoute({ children }) {
+  const { loading, isVisualizador } = useAuth()
+  if (loading) return null
+  if (isVisualizador) return <Navigate to="/admin/dashboard" replace />
+  return children
+}
+
 export default function AdminLayout() {
-  const { isAuthenticated, loading, logout, user } = useAuth()
+  const { isAuthenticated, loading, logout, user, isVisualizador } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
@@ -87,6 +101,7 @@ export default function AdminLayout() {
           {/* Nav links */}
           <nav className="flex-1 px-3 py-4 space-y-1">
             {sidebarLinks.map((link) => {
+              if (link.writeOnly && isVisualizador) return null
               const Icon = link.icon
               return (
                 <Link
@@ -107,6 +122,12 @@ export default function AdminLayout() {
             <div className="px-4 py-2 mb-2">
               <p className="text-xs text-gray-500">Conectado como</p>
               <p className="text-sm text-white font-semibold truncate">{user?.username || 'Admin'}</p>
+              {isVisualizador && (
+                <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-semibold">
+                  <Eye size={11} />
+                  Solo lectura
+                </span>
+              )}
             </div>
             <button
               onClick={handleLogout}

@@ -27,11 +27,13 @@ import Button from '../components/ui/Button'
 import Spinner from '../components/ui/Spinner'
 import Modal from '../components/ui/Modal'
 import useApi from '../hooks/useApi'
+import useAuth from '../hooks/useAuth'
 
 export default function ClientDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { get, put, loading } = useApi()
+  const { canWrite } = useAuth()
 
   const [registration, setRegistration] = useState(null)
   const [history, setHistory] = useState([])
@@ -202,7 +204,7 @@ export default function ClientDetailPage() {
       </div>
 
       {/* Mobile: action buttons sticky at top */}
-      {registration.ESTADO === 'PENDIENTE' && (
+      {canWrite && registration.ESTADO === 'PENDIENTE' && (
         <div className="lg:hidden bg-white rounded-2xl shadow-md p-4 border border-gray-100 sticky top-0 z-10">
           <div className="flex gap-3">
             <Button
@@ -320,7 +322,7 @@ export default function ClientDetailPage() {
           >
             <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
               <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Datos de la Factura</h3>
-              {registration.ESTADO === 'PENDIENTE' && !editing && (
+              {canWrite && registration.ESTADO === 'PENDIENTE' && !editing && (
                 <button
                   onClick={startEdit}
                   className="inline-flex items-center gap-1 text-xs font-semibold text-allways-blue hover:underline"
@@ -401,7 +403,7 @@ export default function ClientDetailPage() {
           </motion.div>
 
           {/* Desktop: action buttons */}
-          {registration.ESTADO === 'PENDIENTE' && (
+          {canWrite && registration.ESTADO === 'PENDIENTE' && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -439,7 +441,7 @@ export default function ClientDetailPage() {
           )}
 
           {/* Revert an already-accepted registration: reject it + cancel its coupons */}
-          {registration.ESTADO === 'ACEPTADO' && (
+          {canWrite && registration.ESTADO === 'ACEPTADO' && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

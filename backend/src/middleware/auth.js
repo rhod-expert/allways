@@ -11,6 +11,10 @@ const db = require('../config/database');
  * Setting ALLWAYS_ADMIN.TOKENS_VALID_SINCE = CURRENT_TIMESTAMP wipes every
  * active session for that admin (used post credential leak or for "log out
  * everywhere" actions).
+ *
+ * The role is re-read from the DB on every request instead of being trusted
+ * from the JWT payload, so demoting an admin to VISUALIZADOR (or deactivating
+ * them) takes effect immediately rather than when their token expires.
  */
 async function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -37,16 +41,22 @@ async function verifyToken(req, res, next) {
     return res.status(401).json({ success: false, message: 'Token invalido.' });
   }
 
+  let rolActual = decoded.rol;
+
   try {
     const adminId = decoded.id || decoded.sub;
     const r = await db.execute(
-      'SELECT TOKENS_VALID_SINCE FROM ALLWAYS_ADMIN WHERE ID = :id',
+      'SELECT TOKENS_VALID_SINCE, ROL, ACTIVO FROM ALLWAYS_ADMIN WHERE ID = :id',
       { id: adminId }
     );
     const row = r.rows?.[0];
     if (!row) {
       return res.status(401).json({ success: false, message: 'Sesion invalida.' });
     }
+    if (row.ACTIVO !== 'S') {
+      return res.status(401).json({ success: false, message: 'Usuario inactivo.' });
+    }
+    rolActual = row.ROL || decoded.rol;
     if (row.TOKENS_VALID_SINCE) {
       // JWT.iat has 1-second precision (start of that second). validSinceMs
       // has full DB precision. Revoke if validSinceMs is AT or AFTER the
@@ -66,7 +76,7 @@ async function verifyToken(req, res, next) {
     return res.status(503).json({ success: false, message: 'Servicio no disponible.' });
   }
 
-  req.admin = decoded;
+  req.admin = { ...decoded, rol: rolActual };
   next();
 }
 

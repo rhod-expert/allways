@@ -288,6 +288,20 @@ const ADMIN_FIND_BY_ID = `
   WHERE ID = :id AND ACTIVO = 'S'
 `;
 
+const ADMIN_LIST = `
+  SELECT ID, USERNAME, NOMBRE, ROL, ACTIVO, ULTIMO_LOGIN
+  FROM ALLWAYS_ADMIN
+  ORDER BY ID ASC
+`;
+
+// Changing the role also revokes every active session for that user, so the
+// new permissions apply on their next login instead of at token expiry.
+const ADMIN_UPDATE_ROL = `
+  UPDATE ALLWAYS_ADMIN
+  SET ROL = :rol, TOKENS_VALID_SINCE = CURRENT_TIMESTAMP
+  WHERE USERNAME = :username
+`;
+
 // ============================================================
 // ALLWAYS_ADMIN_LOG
 // ============================================================
@@ -846,6 +860,8 @@ module.exports = {
   ADMIN_UPDATE_LOGIN,
   ADMIN_UPDATE_PASSWORD,
   ADMIN_FIND_BY_ID,
+  ADMIN_LIST,
+  ADMIN_UPDATE_ROL,
   ADMIN_LOG_INSERT,
   DASHBOARD_STATS_TOTALS,
   DASHBOARD_STATS_TODAY,
