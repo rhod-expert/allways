@@ -435,14 +435,18 @@ const SORTEO_PREMIOS_BY_MES = `
   ORDER BY P.ID ASC
 `;
 
-// Cumulative eligibility: a coupon issued in any month <= :mes that hasn't won yet competes.
-// This way a non-winning May coupon stays in the pot for June, July, ..., until it wins.
-const SORTEO_CUPONES_ELEGIBLES = `
-  SELECT C.ID, C.NUMERO_CUPON, C.PARTICIPANTE_ID,
-         P.NOMBRE, P.CEDULA
-  FROM ALLWAYS_CUPONES C
-  JOIN ALLWAYS_REGISTROS R ON R.ID = C.REGISTRO_ID
-  JOIN ALLWAYS_PARTICIPANTES P ON P.ID = C.PARTICIPANTE_ID
+// Shared eligibility predicate for the draw.
+//
+// Cumulative eligibility: a coupon issued in any month <= :mes that hasn't won
+// yet competes. This way a non-winning May coupon stays in the pot for June,
+// July, ..., until it wins.
+//
+// The NOT EXISTS enforces "one prize per participant per month". With the
+// sequential (prize-by-prize) draw each prize is its own transaction, so this
+// rule can no longer be held in memory across prizes: marking the winning
+// coupon GANADOR = 'S' is not enough, because the same participant may still
+// hold other non-winning coupons that would compete for the next prize.
+const SORTEO_ELEGIBLES_WHERE = `
   WHERE R.ESTADO = 'ACEPTADO'
     AND C.GANADOR = 'N'
     AND DECODE(UPPER(C.MES_SORTEO),
@@ -452,17 +456,79 @@ const SORTEO_CUPONES_ELEGIBLES = `
         DECODE(UPPER(:mes),
         'ENERO',1,'FEBRERO',2,'MARZO',3,'ABRIL',4,'MAYO',5,'JUNIO',6,
         'JULIO',7,'AGOSTO',8,'SEPTIEMBRE',9,'OCTUBRE',10,'NOVIEMBRE',11,'DICIEMBRE',12,99)
+    AND NOT EXISTS (
+      SELECT 1
+      FROM ALLWAYS_PREMIOS P2
+      JOIN ALLWAYS_CUPONES C2 ON C2.ID = P2.CUPON_GANADOR_ID
+      WHERE UPPER(P2.MES) = UPPER(:mes)
+        AND C2.PARTICIPANTE_ID = C.PARTICIPANTE_ID
+    )
+`;
+
+// How many coupons are still in the pot for :mes right now. Mid-draw this
+// already discounts the participants that won an earlier prize of the month.
+const SORTEO_CUPONES_ELEGIBLES_COUNT = `
+  SELECT COUNT(*) AS TOTAL
+  FROM ALLWAYS_CUPONES C
+  JOIN ALLWAYS_REGISTROS R ON R.ID = C.REGISTRO_ID
+  ${SORTEO_ELEGIBLES_WHERE}
+`;
+
+// How many distinct participants are still in the pot. Used to tell the admin
+// up front whether there are enough people left to fill every prize.
+const SORTEO_PARTICIPANTES_ELEGIBLES_COUNT = `
+  SELECT COUNT(DISTINCT C.PARTICIPANTE_ID) AS TOTAL
+  FROM ALLWAYS_CUPONES C
+  JOIN ALLWAYS_REGISTROS R ON R.ID = C.REGISTRO_ID
+  ${SORTEO_ELEGIBLES_WHERE}
+`;
+
+// Pick a single random winner out of the current pot (one prize at a time).
+const SORTEO_CUPON_GANADOR_PICK = `
+  SELECT C.ID, C.NUMERO_CUPON, C.PARTICIPANTE_ID,
+         P.NOMBRE, P.CEDULA,
+         NVL(GC.NOMBRE, P.CIUDAD) AS CIUDAD,
+         GD.NOMBRE AS DEPARTAMENTO
+  FROM ALLWAYS_CUPONES C
+  JOIN ALLWAYS_REGISTROS R ON R.ID = C.REGISTRO_ID
+  JOIN ALLWAYS_PARTICIPANTES P ON P.ID = C.PARTICIPANTE_ID
+  LEFT JOIN ALLWAYS_GEO_CIUDADES GC ON GC.ID = P.CIUDAD_ID
+    AND GC.DEPARTAMENTO_ID = P.DEPARTAMENTO_ID
+    AND GC.DISTRITO_ID = P.DISTRITO_ID
+  LEFT JOIN ALLWAYS_GEO_DEPARTAMENTOS GD ON GD.ID = P.DEPARTAMENTO_ID
+  ${SORTEO_ELEGIBLES_WHERE}
   ORDER BY DBMS_RANDOM.VALUE
+  FETCH FIRST 1 ROW ONLY
+`;
+
+// A sample of coupon numbers to feed the roulette animation. These are just
+// decorative: the real winner comes from SORTEO_CUPON_GANADOR_PICK.
+const SORTEO_CUPONES_MUESTRA = `
+  SELECT C.NUMERO_CUPON
+  FROM ALLWAYS_CUPONES C
+  JOIN ALLWAYS_REGISTROS R ON R.ID = C.REGISTRO_ID
+  ${SORTEO_ELEGIBLES_WHERE}
+  ORDER BY DBMS_RANDOM.VALUE
+  FETCH FIRST 40 ROWS ONLY
+`;
+
+const SORTEO_PREMIO_BY_ID = `
+  SELECT ID, MES, DESCRIPCION, IMAGEN, CUPON_GANADOR_ID, FECHA_SORTEO
+  FROM ALLWAYS_PREMIOS
+  WHERE ID = :premioId AND ACTIVO = 'S'
 `;
 
 const SORTEO_MARCAR_GANADOR_CUPON = `
-  UPDATE ALLWAYS_CUPONES SET GANADOR = 'S' WHERE ID = :cuponId
+  UPDATE ALLWAYS_CUPONES SET GANADOR = 'S'
+  WHERE ID = :cuponId AND GANADOR = 'N'
 `;
 
+// Guarded on CUPON_GANADOR_ID IS NULL so two admins drawing the same prize at
+// the same time cannot both win it: the loser updates 0 rows and is rejected.
 const SORTEO_MARCAR_GANADOR_PREMIO = `
   UPDATE ALLWAYS_PREMIOS
   SET CUPON_GANADOR_ID = :cuponId, FECHA_SORTEO = CURRENT_TIMESTAMP
-  WHERE ID = :premioId
+  WHERE ID = :premioId AND CUPON_GANADOR_ID IS NULL
 `;
 
 const SORTEO_RESET_CUPONES = `
@@ -875,7 +941,11 @@ module.exports = {
   SORTEO_PREMIOS_BY_MES,
   SORTEO_BANNER_STATUS,
   SORTEO_GANADORES_PUBLICOS,
-  SORTEO_CUPONES_ELEGIBLES,
+  SORTEO_CUPONES_ELEGIBLES_COUNT,
+  SORTEO_PARTICIPANTES_ELEGIBLES_COUNT,
+  SORTEO_CUPON_GANADOR_PICK,
+  SORTEO_CUPONES_MUESTRA,
+  SORTEO_PREMIO_BY_ID,
   SORTEO_MARCAR_GANADOR_CUPON,
   SORTEO_MARCAR_GANADOR_PREMIO,
   SORTEO_RESET_CUPONES,

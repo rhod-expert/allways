@@ -64,6 +64,12 @@ const config = {
     setupTokenMinutes: parseInt(process.env.CLIENTE_SETUP_TOKEN_MIN, 10) || (24 * 60),
     resetTokenMinutes: parseInt(process.env.CLIENTE_RESET_TOKEN_MIN, 10) || 30
   },
+  sorteo: {
+    // Dev-only rehearsal mode. When false the /simular endpoints return 404,
+    // so hiding the button in the UI is not the security boundary.
+    // Keep this OFF in production during the real event.
+    simulacionHabilitada: String(process.env.SORTEO_SIMULACION_ENABLED || '').toLowerCase() === 'true'
+  },
   publicBaseUrl: process.env.PUBLIC_BASE_URL || 'https://www.sanjosesa.com.py/allways'
 };
 
