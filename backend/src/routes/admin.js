@@ -54,9 +54,13 @@ router.post('/participantes/:id/revocar-sesiones', adminController.revocarSesion
 router.get('/cupones', couponController.listCupones);
 
 // ---- Sorteos ----
+// Sequential draw: one prize per request, drawn at the moment it is revealed.
+// There is deliberately no month-level "draw everything" endpoint.
 router.get('/sorteos', sorteoController.getResumen);
 router.get('/sorteos/:mes', sorteoController.getDetalle);
-router.post('/sorteos/:mes/ejecutar', sorteoController.ejecutar);
+router.get('/sorteos/:mes/muestra-cupones', sorteoController.getMuestra);
+router.post('/sorteos/:mes/premios/:premioId/ejecutar', sorteoController.ejecutarPremio);
+router.post('/sorteos/:mes/premios/:premioId/simular', sorteoController.simularPremio);
 router.delete('/sorteos/:mes/reset', sorteoController.reset);
 
 // ---- WhatsApp ----
