@@ -186,7 +186,14 @@ export default function ClientDetailPage() {
 
     setUploadingFactura(true)
     try {
-      const res = await api.put(`/admin/registros/${id}/imagen-factura`, form)
+      // The shared axios instance defaults every request to
+      // 'Content-Type: application/json'. That default would override the
+      // multipart type the browser generates for FormData, and the server
+      // would receive no file at all - so it has to be cleared per request,
+      // letting the browser set multipart/form-data with its boundary.
+      const res = await api.put(`/admin/registros/${id}/imagen-factura`, form, {
+        headers: { 'Content-Type': undefined },
+      })
       setRegistration((prev) => ({
         ...prev,
         IMAGEN_FACTURA: res.data?.data?.imagenFactura || prev.IMAGEN_FACTURA,
