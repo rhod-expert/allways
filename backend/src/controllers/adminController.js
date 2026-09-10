@@ -1,8 +1,11 @@
 'use strict';
 
+const fs = require('fs');
+
 const db = require('../config/database');
 const queries = require('../models/queries');
 const couponService = require('../services/couponService');
+const registrationService = require('../services/registrationService');
 const notificationService = require('../services/notificationService');
 const excelExport = require('../services/excelExportService');
 const { formatRuc, cedulaSearchTerm } = require('../utils/cedula');
@@ -343,6 +346,211 @@ async function revertirRegistro(req, res, next) {
 }
 
 /**
+ * Reopen a rejected registration: RECHAZADO -> PENDIENTE.
+ *
+ * The mirror of revertirRegistro. It exists because RECHAZADO was a terminal
+ * state: a registro rejected by mistake could not be recovered from the panel,
+ * and UK_FACTURA_PART (PARTICIPANTE_ID, NUMERO_FACTURA) blocks the participant
+ * from simply submitting that invoice again.
+ *
+ * It deliberately returns the registro to PENDIENTE rather than straight to
+ * ACEPTADO, so it goes through the normal validation path and the acceptance is
+ * recorded against whoever actually re-validates it.
+ */
+async function reabrirRegistro(req, res, next) {
+  try {
+    const registroId = parseInt(req.params.id, 10);
+    if (Number.isNaN(registroId)) {
+      return res.status(400).json({ success: false, message: 'ID invalido.' });
+    }
+
+    const { motivo } = req.body;
+    if (!motivo || !motivo.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'El motivo de reapertura es obligatorio.'
+      });
+    }
+
+    const registroResult = await db.execute(queries.REGISTRO_FIND_BY_ID, { id: registroId });
+
+    if (!registroResult.rows || registroResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Registro no encontrado.' });
+    }
+
+    const registro = registroResult.rows[0];
+
+    if (registro.ESTADO !== 'RECHAZADO') {
+      return res.status(400).json({
+        success: false,
+        message: `Solo se pueden reabrir registros rechazados (estado actual: ${registro.ESTADO}).`
+      });
+    }
+
+    // Invariant check: a rejected registro should carry no coupons. If it does,
+    // accepting it again would mint a second set.
+    const cuponesResult = await db.execute(queries.CUPON_COUNT_BY_REGISTRO, { registroId });
+    const cupones = cuponesResult.rows[0].TOTAL;
+    if (cupones > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `No se puede reabrir: el registro conserva ${cupones} cupon(es). Revisalo manualmente antes de reabrirlo.`
+      });
+    }
+
+    const motivoReapertura = motivo.trim();
+    const motivoRechazoPrevio = registro.MOTIVO_RECHAZO || '(sin motivo registrado)';
+
+    await db.executeTransaction(async (conn) => {
+      const upd = await conn.execute(queries.REGISTRO_REABRIR, { id: registroId });
+
+      if (upd.rowsAffected !== 1) {
+        throw Object.assign(
+          new Error('El registro cambio de estado mientras se lo reabria. Recarga la pagina.'),
+          { statusCode: 409 }
+        );
+      }
+
+      await conn.execute(queries.ADMIN_LOG_INSERT, {
+        adminId: req.admin.id,
+        accion: 'REABRIR_REGISTRO',
+        // The rejection reason is wiped from the row, so it is preserved here:
+        // otherwise reopening would erase why it had been rejected.
+        detalle: `Registro #${registroId} reabierto de RECHAZADO a PENDIENTE. `
+          + `Motivo del rechazo previo: ${motivoRechazoPrevio}. `
+          + `Motivo de reapertura: ${motivoReapertura}`,
+        ip: req.ip || null
+      });
+    });
+
+    return res.json({
+      success: true,
+      message: 'Registro reabierto. Vuelve a la cola de validacion como PENDIENTE.',
+      data: {
+        estado: 'PENDIENTE',
+        motivoRechazoPrevio
+      }
+    });
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ success: false, message: err.message });
+    }
+    next(err);
+  }
+}
+
+/**
+ * Replace the invoice photo of a registration.
+ *
+ * For the case where the participant uploaded the wrong invoice: instead of
+ * rejecting and forcing a re-registration (which UK_FACTURA_PART would block
+ * for the same invoice number), an admin swaps the photo in place.
+ *
+ * Only PENDIENTE and RECHAZADO are allowed. An ACEPTADO registration already
+ * minted coupons, and its invoice photo is the evidence behind them - swapping
+ * it would rewrite that evidence silently. To fix an accepted one, revert it
+ * first (which voids the coupons), then reopen it.
+ *
+ * The previous file is deliberately left on disk and its name recorded in the
+ * audit log, so the original upload can still be produced if it is ever
+ * questioned.
+ */
+async function reemplazarImagenFactura(req, res, next) {
+  // Any early return must clean up the file multer already wrote to disk.
+  const nuevoArchivo = req.file;
+
+  const descartarArchivo = () => {
+    if (!nuevoArchivo) return;
+    fs.unlink(nuevoArchivo.path, (e) => {
+      if (e) console.error('[UPLOAD] No se pudo borrar el archivo descartado:', e.message);
+    });
+  };
+
+  try {
+    const registroId = parseInt(req.params.id, 10);
+    if (Number.isNaN(registroId)) {
+      descartarArchivo();
+      return res.status(400).json({ success: false, message: 'ID invalido.' });
+    }
+
+    if (!nuevoArchivo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Debes adjuntar la nueva foto de la factura (campo imagenFactura).'
+      });
+    }
+
+    const registroResult = await db.execute(queries.REGISTRO_FIND_BY_ID, { id: registroId });
+
+    if (!registroResult.rows || registroResult.rows.length === 0) {
+      descartarArchivo();
+      return res.status(404).json({ success: false, message: 'Registro no encontrado.' });
+    }
+
+    const registro = registroResult.rows[0];
+
+    if (registro.ESTADO === 'ACEPTADO') {
+      descartarArchivo();
+      return res.status(409).json({
+        success: false,
+        message: 'No se puede cambiar la foto de un registro aceptado, porque respalda los '
+          + 'cupones ya emitidos. Reverti la aceptacion primero (anula los cupones) y luego reabrilo.'
+      });
+    }
+
+    // Same sharp validation the public form runs: confirms the real format and
+    // resizes. Deletes the file itself when the content is not a valid image.
+    try {
+      await registrationService.validateAndProcessImage(nuevoArchivo.path);
+    } catch (e) {
+      return res.status(400).json({
+        success: false,
+        message: e.message || 'La imagen es invalida o esta corrupta.'
+      });
+    }
+
+    const imagenAnterior = registro.IMAGEN_FACTURA;
+
+    await db.executeTransaction(async (conn) => {
+      const upd = await conn.execute(queries.REGISTRO_UPDATE_IMAGEN_FACTURA, {
+        imagenFactura: nuevoArchivo.filename,
+        id: registroId
+      });
+
+      if (upd.rowsAffected !== 1) {
+        throw Object.assign(
+          new Error('El registro cambio de estado mientras se subia la imagen. Recarga la pagina.'),
+          { statusCode: 409 }
+        );
+      }
+
+      await conn.execute(queries.ADMIN_LOG_INSERT, {
+        adminId: req.admin.id,
+        accion: 'CAMBIAR_IMAGEN_FACTURA',
+        detalle: `Registro #${registroId} (${registro.ESTADO}): foto de factura reemplazada. `
+          + `Anterior: ${imagenAnterior} (se conserva en disco). Nueva: ${nuevoArchivo.filename}`,
+        ip: req.ip || null
+      });
+    });
+
+    return res.json({
+      success: true,
+      message: 'Foto de la factura actualizada.',
+      data: {
+        imagenFactura: nuevoArchivo.filename,
+        imagenAnterior
+      }
+    });
+  } catch (err) {
+    descartarArchivo();
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ success: false, message: err.message });
+    }
+    next(err);
+  }
+}
+
+/**
  * PUT /api/admin/registros/:id
  * Edit a pending registration's invoice data before approving.
  * Only fields the admin can correct based on the picture: factura number,
@@ -646,6 +854,8 @@ module.exports = {
   getRegistro,
   validarRegistro,
   revertirRegistro,
+  reabrirRegistro,
+  reemplazarImagenFactura,
   editarRegistro,
   listParticipantes,
   getParticipante,

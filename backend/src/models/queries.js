@@ -160,6 +160,26 @@ const REGISTRO_UPDATE_ESTADO = `
   WHERE ID = :id
 `;
 
+// Send a rejected registro back to the validation queue. FECHA_VALIDACION and
+// VALIDADO_POR are cleared because it has not been validated again yet - leaving
+// the old values would credit the reopen to whoever rejected it.
+// Guarded on ESTADO so a concurrent reopen affects 0 rows and is rejected.
+// Swap the invoice photo. Guarded on ESTADO so an admin cannot rewrite the
+// evidence behind a registro that already minted coupons.
+const REGISTRO_UPDATE_IMAGEN_FACTURA = `
+  UPDATE ALLWAYS_REGISTROS SET IMAGEN_FACTURA = :imagenFactura
+  WHERE ID = :id AND ESTADO IN ('PENDIENTE', 'RECHAZADO')
+`;
+
+const REGISTRO_REABRIR = `
+  UPDATE ALLWAYS_REGISTROS SET
+    ESTADO = 'PENDIENTE',
+    FECHA_VALIDACION = NULL,
+    VALIDADO_POR = NULL,
+    MOTIVO_RECHAZO = NULL
+  WHERE ID = :id AND ESTADO = 'RECHAZADO'
+`;
+
 const REGISTRO_UPDATE_FIELDS = `
   UPDATE ALLWAYS_REGISTROS SET
     NUMERO_FACTURA = :numeroFactura,
@@ -207,6 +227,14 @@ const CUPON_LIST_BY_REGISTRO = `
 // Count coupons of a registration that are "locked": already a winner
 // (GANADOR = 'S') or referenced as the winning coupon of a premio. Used to
 // block reverting an accepted registration that already produced a prize.
+// A RECHAZADO registro must hold no coupons: they are only minted on
+// acceptance and are deleted when an acceptance is reverted. Reopening one that
+// somehow kept coupons would mint a second set on the next acceptance, so the
+// reopen path checks this invariant instead of trusting it.
+const CUPON_COUNT_BY_REGISTRO = `
+  SELECT COUNT(*) AS TOTAL FROM ALLWAYS_CUPONES WHERE REGISTRO_ID = :registroId
+`;
+
 const CUPON_COUNT_BLOQUEADOS_BY_REGISTRO = `
   SELECT COUNT(*) AS TOTAL
   FROM ALLWAYS_CUPONES C
@@ -844,12 +872,15 @@ module.exports = {
   REGISTRO_LIST_COUNT,
   REGISTRO_EXPORT,
   REGISTRO_UPDATE_ESTADO,
+  REGISTRO_REABRIR,
+  REGISTRO_UPDATE_IMAGEN_FACTURA,
   REGISTRO_UPDATE_FIELDS,
   CUPON_INSERT,
   CUPON_FIND_BY_CODIGO,
   CUPON_LIST_BY_CEDULA,
   CUPON_LIST_BY_REGISTRO,
   CUPON_COUNT_BLOQUEADOS_BY_REGISTRO,
+  CUPON_COUNT_BY_REGISTRO,
   CUPON_DELETE_BY_REGISTRO,
   CUPON_LIST_ALL,
   CUPON_LIST_ALL_COUNT,

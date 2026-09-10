@@ -21,11 +21,14 @@ import {
   UserSquare,
   Pencil,
   Save,
+  Undo2,
+  Upload,
 } from 'lucide-react'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Spinner from '../components/ui/Spinner'
 import Modal from '../components/ui/Modal'
+import api from '../services/api'
 import useApi from '../hooks/useApi'
 import useAuth from '../hooks/useAuth'
 
@@ -43,6 +46,9 @@ export default function ClientDetailPage() {
   const [rejectReason, setRejectReason] = useState('')
   // 'REJECT' = pending registration, 'REVERT' = already-accepted registration
   const [rejectMode, setRejectMode] = useState('REJECT')
+  const [uploadingFactura, setUploadingFactura] = useState(false)
+  const [reopenModalOpen, setReopenModalOpen] = useState(false)
+  const [reopenReason, setReopenReason] = useState('')
   const [zoomImage, setZoomImage] = useState(null)
   const [editing, setEditing] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
@@ -158,6 +164,57 @@ export default function ClientDetailPage() {
       toast.success(isRevert ? 'Registro revertido y cupones anulados' : 'Registro rechazado')
     } catch (e) {
       toast.error(e.response?.data?.message || 'Error al rechazar el registro')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Swap the invoice photo when the participant uploaded the wrong one.
+  // Blocked server-side for ACEPTADO, since that photo backs issued coupons.
+  const handleFacturaChange = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      toast.error('Solo se aceptan imagenes JPG o PNG')
+      return
+    }
+
+    const form = new FormData()
+    form.append('imagenFactura', file)
+
+    setUploadingFactura(true)
+    try {
+      const res = await api.put(`/admin/registros/${id}/imagen-factura`, form)
+      setRegistration((prev) => ({
+        ...prev,
+        IMAGEN_FACTURA: res.data?.data?.imagenFactura || prev.IMAGEN_FACTURA,
+      }))
+      toast.success('Foto de la factura actualizada')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'No se pudo cambiar la foto')
+    } finally {
+      setUploadingFactura(false)
+    }
+  }
+
+  // Undo a rejection: the registro goes back to the validation queue as
+  // PENDIENTE, not straight to ACEPTADO, so it is re-validated normally.
+  const handleReopen = async () => {
+    if (!reopenReason.trim()) {
+      toast.error('Debes ingresar un motivo de reapertura')
+      return
+    }
+    setActionLoading(true)
+    try {
+      await put(`/admin/registros/${id}/reabrir`, { motivo: reopenReason.trim() })
+      setRegistration((prev) => ({ ...prev, ESTADO: 'PENDIENTE', MOTIVO_RECHAZO: null }))
+      setReopenModalOpen(false)
+      setReopenReason('')
+      toast.success('Registro reabierto: vuelve a la cola como PENDIENTE')
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Error al reabrir el registro')
     } finally {
       setActionLoading(false)
     }
@@ -464,6 +521,32 @@ export default function ClientDetailPage() {
               </Button>
             </motion.div>
           )}
+
+          {/* Undo a rejection: send it back to the validation queue */}
+          {canWrite && registration.ESTADO === 'RECHAZADO' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100"
+            >
+              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Acciones</h3>
+              <p className="text-xs text-gray-500 mb-4 leading-snug">
+                Este registro fue rechazado. Si fue un error, podés reabrirlo: vuelve a
+                <span className="font-semibold"> PENDIENTE</span> y pasa otra vez por la
+                validación normal. No genera cupones por sí solo.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => { setReopenReason(''); setReopenModalOpen(true) }}
+                disabled={actionLoading}
+                className="w-full"
+              >
+                <Undo2 size={18} />
+                Reabrir registro
+              </Button>
+            </motion.div>
+          )}
         </div>
 
         {/* Right column: images - shown first on mobile */}
@@ -474,7 +557,34 @@ export default function ClientDetailPage() {
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-2xl shadow-md p-4 sm:p-6 border border-gray-100"
           >
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 sm:mb-4">Foto de la Factura</h3>
+            <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4">
+              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Foto de la Factura</h3>
+              {canWrite && registration.ESTADO !== 'ACEPTADO' && (
+                <label
+                  className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
+                    uploadingFactura
+                      ? 'text-gray-400 border-gray-200 cursor-default'
+                      : 'text-allways-blue border-allways-blue/30 hover:bg-allways-blue/5 cursor-pointer'
+                  }`}
+                >
+                  <Upload size={14} />
+                  {uploadingFactura ? 'Subiendo...' : 'Cambiar foto'}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    className="hidden"
+                    disabled={uploadingFactura}
+                    onChange={handleFacturaChange}
+                  />
+                </label>
+              )}
+            </div>
+            {canWrite && registration.ESTADO === 'ACEPTADO' && (
+              <p className="text-[11px] text-gray-400 mb-3 leading-snug">
+                Para cambiar esta foto hay que revertir la aceptacion primero: respalda los
+                cupones ya emitidos.
+              </p>
+            )}
             {facturaUrl ? (
               <div
                 className="relative group cursor-pointer rounded-xl overflow-hidden bg-gray-100"
@@ -631,6 +741,61 @@ export default function ClientDetailPage() {
               loading={actionLoading}
             >
               {rejectMode === 'REVERT' ? 'Confirmar y Anular Cupones' : 'Confirmar Rechazo'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Reopen modal */}
+      <Modal
+        isOpen={reopenModalOpen}
+        onClose={() => { setReopenModalOpen(false); setReopenReason('') }}
+        title="Reabrir Registro Rechazado"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-blue-50 rounded-xl border border-blue-200">
+            <p className="text-sm text-blue-800">
+              El registro volverá a <span className="font-semibold">PENDIENTE</span> y
+              reaparecerá en la cola de validación. No se generan cupones hasta que alguien
+              lo acepte.
+            </p>
+          </div>
+          {registration.MOTIVO_RECHAZO && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Motivo del rechazo actual
+              </p>
+              <p className="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+                {registration.MOTIVO_RECHAZO}
+              </p>
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Motivo de reapertura <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={reopenReason}
+              onChange={(e) => setReopenReason(e.target.value)}
+              placeholder="Ej: Rechazado por error, la factura sí es válida..."
+              rows={3}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 outline-none focus:border-blue-400 text-gray-800 resize-none"
+            />
+            <p className="text-xs text-gray-400 mt-1.5">
+              Queda registrado en el log junto con el motivo del rechazo anterior.
+            </p>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="ghost"
+              onClick={() => { setReopenModalOpen(false); setReopenReason('') }}
+              className="!text-gray-600"
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleReopen} loading={actionLoading}>
+              <Undo2 size={18} />
+              Confirmar Reapertura
             </Button>
           </div>
         </div>
