@@ -8,6 +8,7 @@ import {
   CheckCircle,
   Clock,
   Calendar,
+  PlayCircle,
 } from 'lucide-react'
 import Spinner from '../components/ui/Spinner'
 import useApi from '../hooks/useApi'
@@ -77,7 +78,9 @@ export default function SorteosPage() {
       {/* Month cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {meses.map((m, i) => {
-          const done = m.PREMIOS_SORTEADOS > 0
+          // With the sequential draw a month can legitimately sit half-drawn,
+          // so "done" now requires every prize to have a winner.
+          const done = m.TOTAL_PREMIOS > 0 && m.PREMIOS_SORTEADOS === m.TOTAL_PREMIOS
           const partial = m.PREMIOS_SORTEADOS > 0 && m.PREMIOS_SORTEADOS < m.TOTAL_PREMIOS
           return (
             <motion.div
@@ -91,7 +94,9 @@ export default function SorteosPage() {
                 className={`block rounded-2xl shadow-md border-2 p-5 transition-all hover:shadow-lg hover:-translate-y-0.5 ${
                   done
                     ? 'bg-green-50 border-green-200 hover:border-green-300'
-                    : 'bg-white border-gray-100 hover:border-allways-blue/30'
+                    : partial
+                      ? 'bg-blue-50 border-blue-200 hover:border-blue-300'
+                      : 'bg-white border-gray-100 hover:border-allways-blue/30'
                 }`}
               >
                 <div className="flex items-start justify-between mb-3">
@@ -102,6 +107,10 @@ export default function SorteosPage() {
                   {done ? (
                     <span className="flex items-center gap-1 text-xs font-bold text-green-700 bg-green-100 px-2.5 py-1 rounded-full">
                       <CheckCircle size={12} /> Sorteado
+                    </span>
+                  ) : partial ? (
+                    <span className="flex items-center gap-1 text-xs font-bold text-blue-700 bg-blue-100 px-2.5 py-1 rounded-full">
+                      <PlayCircle size={12} /> {m.PREMIOS_SORTEADOS}/{m.TOTAL_PREMIOS}
                     </span>
                   ) : (
                     <span className="flex items-center gap-1 text-xs font-bold text-yellow-700 bg-yellow-100 px-2.5 py-1 rounded-full">

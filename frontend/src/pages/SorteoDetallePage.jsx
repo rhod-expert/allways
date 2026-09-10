@@ -16,10 +16,14 @@ import {
   MapPin,
   Store,
   UserCheck,
+  PlayCircle,
+  FlaskConical,
+  Users,
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Spinner from '../components/ui/Spinner'
 import Modal from '../components/ui/Modal'
+import SorteoPresentacion from '../components/admin/SorteoPresentacion'
 import useApi from '../hooks/useApi'
 import useAuth from '../hooks/useAuth'
 
@@ -30,11 +34,10 @@ export default function SorteoDetallePage() {
 
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [executing, setExecuting] = useState(false)
   const [resetting, setResetting] = useState(false)
+  const [starting, setStarting] = useState(false)
   const [confirmModal, setConfirmModal] = useState(null)
-  const [animating, setAnimating] = useState(false)
-  const [revealedPrizes, setRevealedPrizes] = useState([])
+  const [presentacion, setPresentacion] = useState(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -51,32 +54,59 @@ export default function SorteoDetallePage() {
     fetchData()
   }, [fetchData])
 
-  const handleEjecutar = async () => {
+  /**
+   * Open the fullscreen stage. Coupon numbers for the roulette are fetched
+   * up front so no network hop can stall the animation mid-event.
+   */
+  const abrirPresentacion = async (modo) => {
     setConfirmModal(null)
-    setExecuting(true)
-    setAnimating(true)
-    setRevealedPrizes([])
-
+    setStarting(true)
     try {
-      const result = await post(`/admin/sorteos/${mes}/ejecutar`, {})
-      toast.success(result.message || 'Sorteo realizado exitosamente')
-
-      // Animate prize reveals one by one
-      const ganadores = result.data?.ganadores || []
-      for (let i = 0; i < ganadores.length; i++) {
-        await new Promise((r) => setTimeout(r, 800))
-        setRevealedPrizes((prev) => [...prev, ganadores[i]])
-      }
-
-      await new Promise((r) => setTimeout(r, 500))
-      await fetchData()
-    } catch (err) {
-      toast.error(err?.response?.data?.message || 'Error al ejecutar el sorteo')
+      const muestra = await get(`/admin/sorteos/${mes}/muestra-cupones`)
+      setPresentacion({
+        modo,
+        // A real run only stages the prizes still pending. A rehearsal or a
+        // replay walks every prize, so already-drawn ones must re-enter the
+        // queue - hence the cleared CUPON_GANADOR_ID.
+        premios:
+          modo === 'real'
+            ? data.premios
+            : data.premios.map((p) => ({ ...p, CUPON_GANADOR_ID: null })),
+        muestra: muestra.data?.cupones || [],
+      })
+    } catch {
+      toast.error('No se pudo iniciar la presentacion')
     } finally {
-      setExecuting(false)
-      setAnimating(false)
+      setStarting(false)
     }
   }
+
+  /**
+   * Draw a single prize. Called by the stage at the moment of each reveal:
+   * this is the request that actually creates the winner in the database.
+   */
+  const handleDraw = useCallback(
+    async (premioId) => {
+      // A replay reads the winner already stored - it must never hit a draw
+      // endpoint, otherwise re-showing the results would re-roll them.
+      if (presentacion?.modo === 'replay') {
+        const p = data.premios.find((x) => x.ID === premioId)
+        return {
+          premioId: p.ID,
+          premioDescripcion: p.DESCRIPCION,
+          numeroCupon: p.NUMERO_CUPON,
+          participanteNombre: p.GANADOR_NOMBRE,
+          participanteCedula: p.GANADOR_CEDULA,
+          participanteCiudad: p.GANADOR_CIUDAD,
+        }
+      }
+
+      const path = presentacion?.modo === 'simulacion' ? 'simular' : 'ejecutar'
+      const result = await post(`/admin/sorteos/${mes}/premios/${premioId}/${path}`, {})
+      return result.data.ganador
+    },
+    [post, mes, presentacion, data]
+  )
 
   const handleReset = async () => {
     setConfirmModal(null)
@@ -84,13 +114,17 @@ export default function SorteoDetallePage() {
     try {
       await del(`/admin/sorteos/${mes}/reset`)
       toast.success('Sorteo reseteado')
-      setRevealedPrizes([])
       await fetchData()
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Error al resetear')
     } finally {
       setResetting(false)
     }
+  }
+
+  const cerrarPresentacion = async () => {
+    setPresentacion(null)
+    await fetchData()
   }
 
   if (loading) {
@@ -103,251 +137,332 @@ export default function SorteoDetallePage() {
 
   if (!data) return null
 
-  const { premios, totalElegibles, sorteado } = data
+  const {
+    premios,
+    totalElegibles,
+    participantesElegibles,
+    participantesInsuficientes,
+    sorteados,
+    pendientes,
+    totalPremios,
+    completo,
+    enProgreso,
+    simulacionHabilitada,
+  } = data
+
+  const sinCupones = totalElegibles === 0
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Link
-            to="/admin/sorteos"
-            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-          >
-            <ArrowLeft size={18} className="text-gray-500" />
-          </Link>
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-gray-800">Sorteo de {mes}</h2>
-            <p className="text-gray-500 text-sm">
-              {premios.length} premio{premios.length !== 1 ? 's' : ''} &middot; {totalElegibles} cupones acumulados
-            </p>
+    <>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/admin/sorteos"
+              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
+              <ArrowLeft size={18} className="text-gray-500" />
+            </Link>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-gray-800">Sorteo de {mes}</h2>
+              <p className="text-gray-500 text-sm">
+                {sorteados} de {totalPremios} premios sorteados &middot; {totalElegibles} cupones acumulados
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 flex-wrap">
+            {canWrite && simulacionHabilitada && (
+              <Button
+                variant="ghost"
+                onClick={() => setConfirmModal('simular')}
+                disabled={starting || sinCupones}
+                className="!text-fuchsia-700 !border !border-fuchsia-200 hover:!bg-fuchsia-50"
+              >
+                <FlaskConical size={16} />
+                Simulacion
+              </Button>
+            )}
+
+            {!canWrite ? null : completo ? (
+              <Button
+                variant="ghost"
+                onClick={() => setConfirmModal('reset')}
+                loading={resetting}
+                className="!text-red-600 !border !border-red-200 hover:!bg-red-50"
+              >
+                <RotateCcw size={16} />
+                Resetear
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                onClick={() => setConfirmModal('ejecutar')}
+                loading={starting}
+                disabled={sinCupones}
+                className="!bg-gradient-to-r !from-yellow-500 !to-orange-500 hover:!from-yellow-600 hover:!to-orange-600 !text-white !font-black"
+              >
+                {enProgreso ? <PlayCircle size={16} /> : <Sparkles size={16} />}
+                {enProgreso ? `Continuar sorteo (${pendientes} restantes)` : 'Iniciar Sorteo'}
+              </Button>
+            )}
+
+            {/* Winners already drawn can be re-shown for the audience,
+                reading what is stored - this never re-draws. */}
+            {sorteados > 0 && (
+              <Button
+                variant="ghost"
+                onClick={() => abrirPresentacion('replay')}
+                disabled={starting}
+                className="!text-gray-600 !border !border-gray-200 hover:!bg-gray-50"
+              >
+                <PlayCircle size={16} />
+                Ver presentacion
+              </Button>
+            )}
           </div>
         </div>
 
-        <div className="flex gap-2">
-          {!canWrite ? null : sorteado ? (
-            <Button
-              variant="ghost"
-              onClick={() => setConfirmModal('reset')}
-              loading={resetting}
-              className="!text-red-600 !border-red-200 hover:!bg-red-50"
-            >
-              <RotateCcw size={16} />
-              Resetear
-            </Button>
-          ) : (
-            <Button
-              variant="primary"
-              onClick={() => setConfirmModal('ejecutar')}
-              loading={executing}
-              disabled={totalElegibles === 0}
-              className="!bg-gradient-to-r !from-yellow-500 !to-orange-500 hover:!from-yellow-600 hover:!to-orange-600 !text-white !font-black"
-            >
-              <Sparkles size={16} />
-              Realizar Sorteo
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Status banner */}
-      {sorteado && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-4 sm:p-6 text-white text-center"
-        >
-          <Trophy size={32} className="mx-auto mb-2" />
-          <h3 className="text-lg font-black">Sorteo Realizado</h3>
-          <p className="text-sm text-white/80">
-            {premios.filter(p => p.CUPON_GANADOR_ID).length} ganadores seleccionados
-          </p>
-        </motion.div>
-      )}
-
-      {totalElegibles === 0 && !sorteado && (
-        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 text-center">
-          <AlertTriangle size={32} className="mx-auto text-yellow-500 mb-2" />
-          <h3 className="font-bold text-yellow-800">Sin cupones elegibles</h3>
-          <p className="text-sm text-yellow-600 mt-1">
-            No hay cupones para el mes de {mes}. Los cupones se generan al aceptar registros.
-          </p>
-        </div>
-      )}
-
-      {/* Animation overlay during draw */}
-      <AnimatePresence>
-        {animating && revealedPrizes.length > 0 && (
+        {/* Status banners */}
+        {completo && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="bg-gradient-to-br from-allways-dark to-allways-blue/90 rounded-2xl p-6 space-y-3"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-4 sm:p-6 text-white text-center"
           >
-            <h3 className="text-white font-black text-center text-lg mb-4 flex items-center justify-center gap-2">
-              <Sparkles className="text-yellow-400" size={20} />
-              Resultados del Sorteo
-            </h3>
-            {revealedPrizes.map((g, i) => (
+            <Trophy size={32} className="mx-auto mb-2" />
+            <h3 className="text-lg font-black">Sorteo Completado</h3>
+            <p className="text-sm text-white/80">{sorteados} ganadores seleccionados</p>
+          </motion.div>
+        )}
+
+        {enProgreso && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-4 sm:p-6 text-white text-center"
+          >
+            <PlayCircle size={32} className="mx-auto mb-2" />
+            <h3 className="text-lg font-black">Sorteo en progreso</h3>
+            <p className="text-sm text-white/80">
+              {sorteados} de {totalPremios} premios ya tienen ganador. Podes continuar desde el premio {sorteados + 1}.
+            </p>
+          </motion.div>
+        )}
+
+        {participantesInsuficientes && !completo && (
+          <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-5 flex items-start gap-3">
+            <Users size={22} className="text-orange-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-orange-800 text-sm">Participantes insuficientes</h3>
+              <p className="text-xs text-orange-700 mt-1">
+                Quedan <strong>{pendientes} premios</strong> por sortear pero solo{' '}
+                <strong>{participantesElegibles} participantes distintos</strong> elegibles.
+                Cada participante puede ganar un solo premio por mes, asi que el sorteo se
+                detendra antes de completar todos los premios.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {sinCupones && !completo && (
+          <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 text-center">
+            <AlertTriangle size={32} className="mx-auto text-yellow-500 mb-2" />
+            <h3 className="font-bold text-yellow-800">Sin cupones elegibles</h3>
+            <p className="text-sm text-yellow-600 mt-1">
+              No hay cupones para el mes de {mes}. Los cupones se generan al aceptar registros.
+            </p>
+          </div>
+        )}
+
+        {/* Prizes grid */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Premios del mes</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {premios.map((p, i) => (
               <motion.div
-                key={g.premioId}
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ type: 'spring', stiffness: 200 }}
-                className="bg-white/10 backdrop-blur rounded-xl p-4 flex items-center gap-4"
+                key={p.ID}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className={`rounded-2xl shadow-md border-2 overflow-hidden transition-colors ${
+                  p.CUPON_GANADOR_ID ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'
+                }`}
               >
-                <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0">
-                  <Trophy size={18} className="text-white" />
+                {/* Prize image */}
+                <div className="h-36 sm:h-44 bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center p-4">
+                  <img
+                    src={`/allways${p.IMAGEN}`}
+                    alt={p.DESCRIPCION}
+                    className="max-h-full max-w-full object-contain"
+                    loading="lazy"
+                  />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-white font-bold text-sm truncate">{g.premioDescripcion}</p>
-                  <p className="text-yellow-300 text-xs font-mono">{g.numeroCupon}</p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-white font-semibold text-sm">{g.participanteNombre}</p>
-                  <p className="text-white/60 text-xs">CI: {g.participanteCedula}</p>
+
+                {/* Prize info */}
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <h4 className="font-bold text-gray-800 text-sm leading-tight">{p.DESCRIPCION}</h4>
+                    <Gift size={16} className={p.CUPON_GANADOR_ID ? 'text-green-500' : 'text-gray-300'} />
+                  </div>
+
+                  {p.CUPON_GANADOR_ID ? (
+                    <div className="bg-green-100 rounded-xl p-3 space-y-1.5">
+                      <p className="text-xs font-bold text-green-800 flex items-center gap-1">
+                        <Trophy size={12} /> GANADOR
+                      </p>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-green-900 flex items-center gap-1.5">
+                          <User size={13} /> {p.GANADOR_NOMBRE}
+                        </p>
+                        <p className="text-xs text-green-700 flex items-center gap-1.5">
+                          <Hash size={12} /> CI: {p.GANADOR_CEDULA}
+                        </p>
+                        {p.GANADOR_TELEFONO && (
+                          <p className="text-xs text-green-700 flex items-center gap-1.5">
+                            <Phone size={12} /> {p.GANADOR_TELEFONO}
+                          </p>
+                        )}
+                        {p.GANADOR_CIUDAD && (
+                          <p className="text-xs text-green-700 flex items-center gap-1.5">
+                            <MapPin size={12} /> {p.GANADOR_CIUDAD}
+                          </p>
+                        )}
+                        {p.GANADOR_TIENDA && (
+                          <p className="text-xs text-green-700 flex items-center gap-1.5">
+                            <Store size={12} /> {p.GANADOR_TIENDA}
+                          </p>
+                        )}
+                        {p.GANADOR_VENDEDOR && (
+                          <p className="text-xs text-green-700 flex items-center gap-1.5">
+                            <UserCheck size={12} /> {p.GANADOR_VENDEDOR}
+                          </p>
+                        )}
+                        <p className="text-xs text-green-600 flex items-center gap-1.5 font-mono">
+                          <Ticket size={12} /> {p.NUMERO_CUPON}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-100 rounded-xl p-3 text-center">
+                      <p className="text-xs text-gray-400 font-semibold">Pendiente de sorteo</p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Prizes grid */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Premios del mes</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {premios.map((p, i) => (
-            <motion.div
-              key={p.ID}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className={`rounded-2xl shadow-md border-2 overflow-hidden transition-colors ${
-                p.CUPON_GANADOR_ID
-                  ? 'bg-green-50 border-green-200'
-                  : 'bg-white border-gray-100'
-              }`}
-            >
-              {/* Prize image */}
-              <div className="h-36 sm:h-44 bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center p-4">
-                <img
-                  src={`/allways${p.IMAGEN}`}
-                  alt={p.DESCRIPCION}
-                  className="max-h-full max-w-full object-contain"
-                  loading="lazy"
-                />
-              </div>
-
-              {/* Prize info */}
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <h4 className="font-bold text-gray-800 text-sm leading-tight">{p.DESCRIPCION}</h4>
-                  <Gift size={16} className={p.CUPON_GANADOR_ID ? 'text-green-500' : 'text-gray-300'} />
-                </div>
-
-                {p.CUPON_GANADOR_ID ? (
-                  <div className="bg-green-100 rounded-xl p-3 space-y-1.5">
-                    <p className="text-xs font-bold text-green-800 flex items-center gap-1">
-                      <Trophy size={12} /> GANADOR
-                    </p>
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-green-900 flex items-center gap-1.5">
-                        <User size={13} /> {p.GANADOR_NOMBRE}
-                      </p>
-                      <p className="text-xs text-green-700 flex items-center gap-1.5">
-                        <Hash size={12} /> CI: {p.GANADOR_CEDULA}
-                      </p>
-                      {p.GANADOR_TELEFONO && (
-                        <p className="text-xs text-green-700 flex items-center gap-1.5">
-                          <Phone size={12} /> {p.GANADOR_TELEFONO}
-                        </p>
-                      )}
-                      {p.GANADOR_CIUDAD && (
-                        <p className="text-xs text-green-700 flex items-center gap-1.5">
-                          <MapPin size={12} /> {p.GANADOR_CIUDAD}
-                        </p>
-                      )}
-                      {p.GANADOR_TIENDA && (
-                        <p className="text-xs text-green-700 flex items-center gap-1.5">
-                          <Store size={12} /> {p.GANADOR_TIENDA}
-                        </p>
-                      )}
-                      {p.GANADOR_VENDEDOR && (
-                        <p className="text-xs text-green-700 flex items-center gap-1.5">
-                          <UserCheck size={12} /> {p.GANADOR_VENDEDOR}
-                        </p>
-                      )}
-                      <p className="text-xs text-green-600 flex items-center gap-1.5 font-mono">
-                        <Ticket size={12} /> {p.NUMERO_CUPON}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-gray-100 rounded-xl p-3 text-center">
-                    <p className="text-xs text-gray-400 font-semibold">Pendiente de sorteo</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          ))}
+          </div>
         </div>
+
+        {/* Confirm: start / resume the live draw */}
+        <Modal
+          isOpen={confirmModal === 'ejecutar'}
+          onClose={() => setConfirmModal(null)}
+          title={enProgreso ? 'Continuar Sorteo' : 'Iniciar Sorteo'}
+        >
+          <div className="space-y-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+              <p className="text-sm text-yellow-800">
+                Se abrira la <strong>presentacion en pantalla completa</strong>. Cada premio se
+                sortea individualmente en el momento de su revelacion, entre{' '}
+                <strong>{totalElegibles} cupones acumulados</strong> de{' '}
+                <strong>{participantesElegibles} participantes</strong>.
+              </p>
+              <p className="text-xs text-yellow-600 mt-2">
+                Cada resultado se guarda apenas se revela y <strong>no se puede deshacer
+                individualmente</strong>. Si necesitas rehacer el sorteo, hay que resetear el mes completo.
+              </p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button variant="ghost" onClick={() => setConfirmModal(null)} className="!text-gray-600">
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => abrirPresentacion('real')}
+                className="!bg-gradient-to-r !from-yellow-500 !to-orange-500 !text-white !font-bold"
+              >
+                <Sparkles size={16} />
+                {enProgreso ? 'Continuar' : 'Iniciar'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Confirm: rehearsal */}
+        <Modal
+          isOpen={confirmModal === 'simular'}
+          onClose={() => setConfirmModal(null)}
+          title="Modo Simulacion"
+        >
+          <div className="space-y-4">
+            <div className="bg-fuchsia-50 border border-fuchsia-200 rounded-xl p-4">
+              <p className="text-sm text-fuchsia-900">
+                Ensayo de la presentacion. Se sortea con la misma logica del sorteo real, pero{' '}
+                <strong>no se guarda ningun ganador</strong>.
+              </p>
+              <p className="text-xs text-fuchsia-700 mt-2">
+                Se recorren los {totalPremios} premios del mes.
+                {sorteados > 0 && (
+                  <> Como este mes ya tiene ganadores reales, esos cupones estan fuera del sorteo,
+                  asi que la simulacion mostrara personas distintas.</>
+                )}
+              </p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button variant="ghost" onClick={() => setConfirmModal(null)} className="!text-gray-600">
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => abrirPresentacion('simulacion')}
+                className="!bg-fuchsia-600 hover:!bg-fuchsia-700 !text-white !font-bold"
+              >
+                <FlaskConical size={16} />
+                Iniciar simulacion
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Confirm: reset */}
+        <Modal
+          isOpen={confirmModal === 'reset'}
+          onClose={() => setConfirmModal(null)}
+          title="Resetear Sorteo"
+        >
+          <div className="space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+              <p className="text-sm text-red-800">
+                Se eliminaran <strong>todos</strong> los ganadores del mes de <strong>{mes}</strong>.
+                Los cupones volveran a estar disponibles para un nuevo sorteo.
+              </p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button variant="ghost" onClick={() => setConfirmModal(null)} className="!text-gray-600">
+                Cancelar
+              </Button>
+              <Button variant="red" onClick={handleReset}>
+                <RotateCcw size={16} />
+                Confirmar Reset
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
 
-      {/* Confirm modal */}
-      <Modal
-        isOpen={confirmModal === 'ejecutar'}
-        onClose={() => setConfirmModal(null)}
-        title="Confirmar Sorteo"
-      >
-        <div className="space-y-4">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-            <p className="text-sm text-yellow-800">
-              Se seleccionaran <strong>{premios.length} ganadores</strong> aleatoriamente
-              entre <strong>{totalElegibles} cupones acumulados</strong> (incluye cupones de meses anteriores que aun no ganaron) para el sorteo de <strong>{mes}</strong>.
-            </p>
-            <p className="text-xs text-yellow-600 mt-2">
-              Cada participante puede ganar maximo un premio por mes. Los cupones que no ganen continuan en el sorteo del mes siguiente.
-            </p>
-          </div>
-          <div className="flex gap-3 justify-end">
-            <Button variant="ghost" onClick={() => setConfirmModal(null)} className="!text-gray-600">
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleEjecutar}
-              className="!bg-gradient-to-r !from-yellow-500 !to-orange-500 !text-white !font-bold"
-            >
-              <Sparkles size={16} />
-              Realizar Sorteo
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={confirmModal === 'reset'}
-        onClose={() => setConfirmModal(null)}
-        title="Resetear Sorteo"
-      >
-        <div className="space-y-4">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-            <p className="text-sm text-red-800">
-              Se eliminaran todos los ganadores del mes de <strong>{mes}</strong>.
-              Los cupones volveran a estar disponibles para un nuevo sorteo.
-            </p>
-          </div>
-          <div className="flex gap-3 justify-end">
-            <Button variant="ghost" onClick={() => setConfirmModal(null)} className="!text-gray-600">
-              Cancelar
-            </Button>
-            <Button variant="red" onClick={handleReset}>
-              <RotateCcw size={16} />
-              Confirmar Reset
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    </div>
+      <AnimatePresence>
+        {presentacion && (
+          <SorteoPresentacion
+            mes={mes}
+            premios={presentacion.premios}
+            muestraCupones={presentacion.muestra}
+            modo={presentacion.modo}
+            onDraw={handleDraw}
+            onClose={cerrarPresentacion}
+            onFinish={fetchData}
+          />
+        )}
+      </AnimatePresence>
+    </>
   )
 }

@@ -181,6 +181,12 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 | `GET` | `/api/admin/participantes/:id` | Detalle participante + registros |
 | `POST` | `/api/admin/participantes/:id/revocar-sesiones` | Invalida todas las sesiones JWT activas del cliente |
 | `GET` | `/api/admin/cupones` | Listar todos los cupones |
+| `GET` | `/api/admin/sorteos` | Resumen de todos los meses con estado del sorteo |
+| `GET` | `/api/admin/sorteos/:mes` | Detalle del mes: premios, ganadores, pozo elegible |
+| `GET` | `/api/admin/sorteos/:mes/muestra-cupones` | Numeros de cupon para la ruleta de la presentacion |
+| `POST` | `/api/admin/sorteos/:mes/premios/:premioId/ejecutar` | Sortea **un** premio y lo persiste (una transaccion) |
+| `POST` | `/api/admin/sorteos/:mes/premios/:premioId/simular` | Ensayo sin persistir (404 si `SORTEO_SIMULACION_ENABLED=false`) |
+| `DELETE` | `/api/admin/sorteos/:mes/reset` | Anula todos los ganadores del mes (no hay reset por premio) |
 | `GET` | `/api/admin/whatsapp/instancia` | Estado de la instancia Evolution + QR almacenado |
 | `POST` | `/api/admin/whatsapp/instancia/conectar` | Iniciar/refrescar pareo (genera QR) |
 | `POST` | `/api/admin/whatsapp/instancia/desconectar` | Logout del dispositivo vinculado |
@@ -508,6 +514,7 @@ El link apunta a `/cliente/setup-password?t=<token>` donde el cliente define ema
 | `CLIENTE_SETUP_TOKEN_MIN` | Validez del magic-link inicial en minutos | `1440` (24 h) |
 | `CLIENTE_RESET_TOKEN_MIN` | Validez del token de reset en minutos | `30` |
 | `PUBLIC_BASE_URL` | URL base usada en los magic-links de WhatsApp | `https://www.sanjosesa.com.py/allways` |
+| `SORTEO_SIMULACION_ENABLED` | Habilita el ensayo de sorteo sin persistir. **`false` durante el evento real** | `false` |
 
 ### Nginx
 
@@ -848,6 +855,30 @@ Las tablas `ALLWAYS_ADMIN_LOG`, `ALLWAYS_CLIENTE_LOG` y `ALLWAYS_WA_LOG_NOTIF` c
 ---
 
 ## Changelog
+
+### v1.6.0 — 2026-09-06 (Sorteo secuencial premio a premio)
+
+- **CHANGE** Los premios dejan de sortearse en simultaneo: cada uno se sortea en su propia
+  request y su propia transaccion, en el instante de su revelacion. Se elimina el endpoint
+  mensual `POST /admin/sorteos/:mes/ejecutar`
+- **BREAKING** La regla "1 premio por participante por mes" pasa de un `Set` en memoria a un
+  `NOT EXISTS` en la clausula de elegibilidad (`SORTEO_ELEGIBLES_WHERE` en `queries.js`).
+  Tocar esa clausula rompe la regla en silencio
+- **CHANGE** Un mes a medio sortear es ahora un estado legitimo: `sorteado` (booleano) se
+  reemplaza por `sorteados` / `pendientes` / `completo` / `enProgreso`. Recargar la pagina
+  retoma desde el premio siguiente
+- **NEW** `SorteoPresentacion`: escenario a pantalla completa con ruleta, cuenta regresiva y
+  avance manual (teclado incluido, para control remoto). Modos `real`, `simulacion` y `replay`
+- **NEW** `SORTEO_SIMULACION_ENABLED` habilita `POST .../simular`, que ensaya la presentacion
+  sin escribir nada. Con la flag apagada el endpoint responde 404 — el gate es el backend
+- **NEW** `GET /admin/sorteos/:mes/muestra-cupones` para alimentar la ruleta
+- **FIX** El overlay de resultados se destruia al terminar la animacion y la grilla repintaba
+  los 5 ganadores de golpe: la causa concreta del "se sortean en simultaneo" reportado
+- **FIX** `SorteosPage` marcaba un mes como "Sorteado" con un solo premio asignado; ahora
+  exige todos y muestra progreso ("2/5") para los parciales
+- **SEC** Los `UPDATE` de premio y cupon quedan condicionados a que la fila siga sin sortear,
+  para que dos admins simultaneos no puedan ganar el mismo premio
+- Ver `docs/FEAT-2026-09-06-sorteo-secuencial.md`
 
 ### v1.5.0 — 2026-06-09 (Revertir registros aceptados)
 
