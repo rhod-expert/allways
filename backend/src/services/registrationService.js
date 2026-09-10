@@ -228,4 +228,4 @@ async function register(data, files) {
   };
 }
 
-module.exports = { register };
+module.exports = { register, validateAndProcessImage };

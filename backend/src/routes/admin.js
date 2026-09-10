@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 
 const authController = require('../controllers/authController');
+const { handleUploadFactura } = require('../middleware/upload');
 const adminController = require('../controllers/adminController');
 const dashboardController = require('../controllers/dashboardController');
 const couponController = require('../controllers/couponController');
@@ -42,6 +43,8 @@ router.get('/registros/export', adminController.exportRegistros);
 router.get('/registros/:id', adminController.getRegistro);
 router.put('/registros/:id/validar', adminController.validarRegistro);
 router.put('/registros/:id/revertir', adminController.revertirRegistro);
+router.put('/registros/:id/reabrir', adminController.reabrirRegistro);
+router.put('/registros/:id/imagen-factura', handleUploadFactura, adminController.reemplazarImagenFactura);
 router.put('/registros/:id', adminController.editarRegistro);
 
 // ---- Participantes ----

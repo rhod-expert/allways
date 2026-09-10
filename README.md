@@ -177,6 +177,8 @@ Los participantes compran productos Allways, cargan su factura, y reciben cupone
 | `PUT` | `/api/admin/registros/:id/validar` | Aceptar o rechazar registro (solo PENDIENTE) |
 | `PUT` | `/api/admin/registros/:id` | Editar datos de factura (solo PENDIENTE) |
 | `PUT` | `/api/admin/registros/:id/revertir` | Revertir registro ACEPTADO → RECHAZADO y anular sus cupones |
+| `PUT` | `/api/admin/registros/:id/reabrir` | Reabrir registro RECHAZADO → PENDIENTE (vuelve a la cola de validacion) |
+| `PUT` | `/api/admin/registros/:id/imagen-factura` | Reemplazar la foto de la factura (multipart; bloqueado sobre ACEPTADO) |
 | `GET` | `/api/admin/participantes` | Listar participantes con totales |
 | `GET` | `/api/admin/participantes/:id` | Detalle participante + registros |
 | `POST` | `/api/admin/participantes/:id/revocar-sesiones` | Invalida todas las sesiones JWT activas del cliente |
@@ -420,7 +422,26 @@ puede pasar a rechazar tipeos.
    - **Bloqueado (409)** si algun cupon ya resulto ganador (`GANADOR='S'`) o respalda
      un premio (`ALLWAYS_PREMIOS.CUPON_GANADOR_ID`) — en ese caso no borra nada
    - **Notificacion WhatsApp**: misma plantilla `RECHAZADO` con el motivo
-6. Toda accion se registra en `ALLWAYS_ADMIN_LOG` (incluye `REVERTIR_REGISTRO`)
+6. **REABRIR** (`PUT /registros/:id/reabrir`) → deshace un rechazo equivocado:
+   - Solo sobre registros `RECHAZADO`; vuelve a `PENDIENTE` con motivo obligatorio
+   - Vuelve a `PENDIENTE` y **no** directo a `ACEPTADO`, para que pase otra vez por la
+     validacion normal y la aceptacion quede acreditada a quien la revalide
+   - `MOTIVO_RECHAZO`, `FECHA_VALIDACION` y `VALIDADO_POR` se limpian; el motivo previo
+     queda preservado en `ALLWAYS_ADMIN_LOG`
+   - Importa porque `UK_FACTURA_PART UNIQUE (PARTICIPANTE_ID, NUMERO_FACTURA)` impide que
+     el participante vuelva a cargar la misma factura: sin reabrir, un rechazo por error
+     le bloquea esa nota para siempre
+   - **Sin notificacion WhatsApp** (no existe plantilla para "volvio a analisis")
+7. **CAMBIAR FOTO** (`PUT /registros/:id/imagen-factura`) → el participante cargo la
+   factura equivocada:
+   - Multipart, campo `imagenFactura`; mismo storage, filtro y validacion `sharp` que el
+     formulario publico
+   - Permitido sobre `PENDIENTE` y `RECHAZADO`. **Bloqueado (409) sobre `ACEPTADO`**: esa
+     foto respalda los cupones emitidos. Para uno aceptado: revertir → reabrir → cambiar
+   - La imagen anterior **no se borra**; queda en disco y ambos nombres van al log
+8. Toda accion se registra en `ALLWAYS_ADMIN_LOG` (incluye `REVERTIR_REGISTRO`,
+   `REABRIR_REGISTRO` y `CAMBIAR_IMAGEN_FACTURA`). El texto libre se recorta antes de
+   insertarlo: `DETALLE` es `VARCHAR2(500)` y un solo motivo puede llenarlo entero
 
 ### WhatsApp / Notificaciones automaticas (Evolution API + Baileys)
 
@@ -848,6 +869,25 @@ Las tablas `ALLWAYS_ADMIN_LOG`, `ALLWAYS_CLIENTE_LOG` y `ALLWAYS_WA_LOG_NOTIF` c
 ---
 
 ## Changelog
+
+### v1.7.0 — 2026-09-10 (Reabrir rechazados + cambiar foto de factura)
+
+- **FEAT** Nuevo `PUT /api/admin/registros/:id/reabrir`: pasa un registro `RECHAZADO`
+  a `PENDIENTE` con motivo obligatorio. `RECHAZADO` era un estado terminal y, como
+  `UK_FACTURA_PART` es UNIQUE, un rechazo por error bloqueaba esa factura para siempre
+- **FEAT** Nuevo `PUT /api/admin/registros/:id/imagen-factura`: reemplaza la foto de la
+  factura cuando el participante cargo la equivocada. Bloqueado (409) sobre registros
+  `ACEPTADO`, porque esa foto respalda los cupones ya emitidos
+- **FEAT** Panel: boton "Reabrir registro" en el detalle de un rechazado y "Cambiar foto"
+  en la cabecera de la factura
+- **FIX** El `FormData` salia con `Content-Type: application/json`, porque la instancia de
+  axios lo fija como default para toda request: el servidor no recibia archivo alguno.
+  Se limpia el header en esa request
+- **FIX** `ALLWAYS_ADMIN_LOG.DETALLE` es `VARCHAR2(500)` y `MOTIVO_RECHAZO` tambien, asi
+  que un solo motivo podia desbordar la columna y tumbar la request con ORA-12899. El
+  texto libre se recorta antes de insertarlo. Corregido tambien en `revertirRegistro`,
+  donde el defecto estaba latente desde v1.5.0
+- Ver `docs/FEAT-2026-09-10-reabrir-y-cambiar-factura.md`
 
 ### v1.5.0 — 2026-06-09 (Revertir registros aceptados)
 

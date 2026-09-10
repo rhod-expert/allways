@@ -89,4 +89,33 @@ function handleUpload(req, res, next) {
   });
 }
 
-module.exports = { handleUpload };
+/**
+ * Admin replacement of a registration's invoice photo: one file, field
+ * `imagenFactura`. Reuses the same storage and filter as the public form, so a
+ * replaced invoice lands in uploads/facturas with the same naming and limits.
+ */
+const uploadFacturaUnica = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: config.upload.maxSize, files: 1 }
+}).single('imagenFactura');
+
+function handleUploadFactura(req, res, next) {
+  uploadFacturaUnica(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({
+          success: false,
+          message: 'El archivo excede el tamano maximo permitido (5MB).'
+        });
+      }
+      return res.status(400).json({ success: false, message: `Error de carga: ${err.message}` });
+    }
+    if (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+    next();
+  });
+}
+
+module.exports = { handleUpload, handleUploadFactura };
