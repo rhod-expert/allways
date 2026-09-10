@@ -10,6 +10,22 @@ const notificationService = require('../services/notificationService');
 const excelExport = require('../services/excelExportService');
 const { formatRuc, cedulaSearchTerm } = require('../utils/cedula');
 
+// ALLWAYS_ADMIN_LOG.DETALLE is VARCHAR2(500), and MOTIVO_RECHAZO is itself
+// VARCHAR2(500) - a single user-written reason can fill the whole log column on
+// its own. Free text going into a log line must be clamped per field, and the
+// finished line clamped again as a backstop, or the INSERT fails with ORA-12899
+// and takes the whole request down with a 500.
+const LOG_DETALLE_MAX = 500;
+const LOG_MOTIVO_MAX = 180;
+
+function clampText(text, max) {
+  const t = String(text ?? '');
+  return t.length <= max ? t : `${t.slice(0, max - 3)}...`;
+}
+
+const logMotivo = (text) => clampText(text, LOG_MOTIVO_MAX);
+const logDetalle = (text) => clampText(text, LOG_DETALLE_MAX);
+
 const EXPORT_MAX_ROWS = 50000;
 const EXPORT_TS = () => {
   const d = new Date();
@@ -317,8 +333,10 @@ async function revertirRegistro(req, res, next) {
       await conn.execute(queries.ADMIN_LOG_INSERT, {
         adminId: req.admin.id,
         accion: 'REVERTIR_REGISTRO',
-        detalle: `Registro #${registroId} revertido de ACEPTADO a RECHAZADO. `
-          + `${del.rowsAffected} cupon(es) anulado(s). Motivo: ${motivoRechazo}`,
+        detalle: logDetalle(
+          `Registro #${registroId} revertido de ACEPTADO a RECHAZADO. `
+          + `${del.rowsAffected} cupon(es) anulado(s). Motivo: ${logMotivo(motivoRechazo)}`
+        ),
         ip: req.ip || null
       });
 
@@ -416,9 +434,11 @@ async function reabrirRegistro(req, res, next) {
         accion: 'REABRIR_REGISTRO',
         // The rejection reason is wiped from the row, so it is preserved here:
         // otherwise reopening would erase why it had been rejected.
-        detalle: `Registro #${registroId} reabierto de RECHAZADO a PENDIENTE. `
-          + `Motivo del rechazo previo: ${motivoRechazoPrevio}. `
-          + `Motivo de reapertura: ${motivoReapertura}`,
+        detalle: logDetalle(
+          `Registro #${registroId} reabierto de RECHAZADO a PENDIENTE. `
+          + `Motivo del rechazo previo: ${logMotivo(motivoRechazoPrevio)}. `
+          + `Motivo de reapertura: ${logMotivo(motivoReapertura)}`
+        ),
         ip: req.ip || null
       });
     });
@@ -527,8 +547,10 @@ async function reemplazarImagenFactura(req, res, next) {
       await conn.execute(queries.ADMIN_LOG_INSERT, {
         adminId: req.admin.id,
         accion: 'CAMBIAR_IMAGEN_FACTURA',
-        detalle: `Registro #${registroId} (${registro.ESTADO}): foto de factura reemplazada. `
-          + `Anterior: ${imagenAnterior} (se conserva en disco). Nueva: ${nuevoArchivo.filename}`,
+        detalle: logDetalle(
+          `Registro #${registroId} (${registro.ESTADO}): foto de factura reemplazada. `
+          + `Anterior: ${imagenAnterior} (se conserva en disco). Nueva: ${nuevoArchivo.filename}`
+        ),
         ip: req.ip || null
       });
     });
