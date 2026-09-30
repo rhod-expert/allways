@@ -9,6 +9,7 @@ const queries = require('../models/queries');
 const config = require('../config/env');
 const notificationService = require('./notificationService');
 const { normalizeCedula, isValidCedula } = require('../utils/cedula');
+const { normalizeFactura } = require('../utils/factura');
 
 const MAX_WIDTH = 1920;
 
@@ -89,6 +90,15 @@ async function register(data, files) {
   // A RUC is the holder's CI plus a check digit: collapse both to one participant.
   const cedulaKey = normalizeCedula(cedula);
 
+  const facturaKey = normalizeFactura(numeroFactura);
+  if (!facturaKey) {
+    console.warn('[REGISTRO] Numero de factura invalido', { cedula: cedulaKey, numeroFactura });
+    throw Object.assign(
+      new Error('Ingrese el numero de factura completo, ej: 001-001-0012345. No use el numero de timbrado.'),
+      { statusCode: 400 }
+    );
+  }
+
   // Validate factura image is present
   if (!files || !files.imagenFactura || files.imagenFactura.length === 0) {
     throw Object.assign(new Error('La imagen de la factura es obligatoria.'), { statusCode: 400 });
@@ -157,7 +167,7 @@ async function register(data, files) {
         queries.REGISTRO_INSERT,
         {
           participanteId,
-          numeroFactura: stripHtml(numeroFactura),
+          numeroFactura: facturaKey,
           cantidadProductos: cantidadNum,
           imagenFactura: facturaFile.filename,
           imagenProductos: productosFilename,
@@ -171,6 +181,13 @@ async function register(data, files) {
     } catch (e) {
       // ORA-00001: unique_constraint_violation on UK_FACTURA_PART
       if (e && e.errorNum === 1) {
+        // The generic [ERROR] log carries no identifiers; without these a
+        // participant's complaint cannot be traced to the registro blocking it.
+        console.warn('[REGISTRO] Factura duplicada', {
+          participanteId,
+          cedula: cedulaKey,
+          numeroFactura: facturaKey
+        });
         throw Object.assign(
           new Error('Esta factura ya fue registrada anteriormente.'),
           { statusCode: 409 }
@@ -197,7 +214,7 @@ async function register(data, files) {
     },
     registro: {
       ID: result.registroId,
-      NUMERO_FACTURA: numeroFactura,
+      NUMERO_FACTURA: facturaKey,
       CANTIDAD_PRODUCTOS: cantidadNum
     }
   }).catch((e) => {
