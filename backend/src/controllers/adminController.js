@@ -9,6 +9,7 @@ const registrationService = require('../services/registrationService');
 const notificationService = require('../services/notificationService');
 const excelExport = require('../services/excelExportService');
 const { formatRuc, cedulaSearchTerm } = require('../utils/cedula');
+const { normalizeFactura } = require('../utils/factura');
 
 // ALLWAYS_ADMIN_LOG.DETALLE is VARCHAR2(500), and MOTIVO_RECHAZO is itself
 // VARCHAR2(500) - a single user-written reason can fill the whole log column on
@@ -587,7 +588,7 @@ async function editarRegistro(req, res, next) {
 
     const { numeroFactura, cantidadProductos, tienda, vendedor } = req.body || {};
 
-    const numero = (numeroFactura || '').toString().trim();
+    let numero = (numeroFactura || '').toString().trim();
     if (!numero) {
       return res.status(400).json({ success: false, message: 'El numero de factura es obligatorio.' });
     }
@@ -608,13 +609,36 @@ async function editarRegistro(req, res, next) {
       });
     }
 
-    await db.execute(queries.REGISTRO_UPDATE_FIELDS, {
-      numeroFactura: numero,
-      cantidadProductos: cantidad,
-      tienda: (tienda || '').toString().trim() || null,
-      vendedor: (vendedor || '').toString().trim() || null,
-      id: registroId
-    }, { autoCommit: true });
+    // Same rule as the public form. An unchanged number is kept as stored so a
+    // registro saved before normalization can still have its other fields fixed.
+    if (numero !== registro.NUMERO_FACTURA) {
+      numero = normalizeFactura(numero);
+      if (!numero) {
+        return res.status(400).json({
+          success: false,
+          message: 'Numero de factura invalido. Use el formato 001-001-0012345 (no el timbrado).'
+        });
+      }
+    }
+
+    try {
+      await db.execute(queries.REGISTRO_UPDATE_FIELDS, {
+        numeroFactura: numero,
+        cantidadProductos: cantidad,
+        tienda: (tienda || '').toString().trim() || null,
+        vendedor: (vendedor || '').toString().trim() || null,
+        id: registroId
+      }, { autoCommit: true });
+    } catch (e) {
+      // ORA-00001 on UK_FACTURA_PART: the participant already has this number.
+      if (e && e.errorNum === 1) {
+        return res.status(409).json({
+          success: false,
+          message: `El participante ya tiene otro registro con la factura ${numero}.`
+        });
+      }
+      throw e;
+    }
 
     const diffs = [];
     if (registro.NUMERO_FACTURA !== numero) diffs.push(`factura ${registro.NUMERO_FACTURA} -> ${numero}`);
