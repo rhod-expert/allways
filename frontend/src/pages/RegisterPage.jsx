@@ -11,7 +11,7 @@ import WhatsAppSAC from '../components/ui/WhatsAppSAC'
 import CouponReleaseNotice from '../components/ui/CouponReleaseNotice'
 import useApi from '../hooks/useApi'
 import useGeo from '../hooks/useGeo'
-import { validateRegistrationForm, normalizeCedula } from '../utils/validators'
+import { validateRegistrationForm, normalizeCedula, normalizeFactura, validateFactura } from '../utils/validators'
 
 const initialForm = {
   nombre: '',
@@ -59,6 +59,18 @@ export default function RegisterPage() {
         delete next[name]
         return next
       })
+    }
+  }
+
+  // Show the invoice number in its canonical form as soon as the field is left,
+  // so a participant who typed the timbrado finds out before submitting.
+  const handleFacturaBlur = () => {
+    if (!form.numero_factura.trim()) return
+    const normalized = normalizeFactura(form.numero_factura)
+    if (normalized) {
+      setForm((prev) => ({ ...prev, numero_factura: normalized }))
+    } else {
+      setErrors((prev) => ({ ...prev, numero_factura: validateFactura(form.numero_factura) }))
     }
   }
 
@@ -210,7 +222,7 @@ export default function RegisterPage() {
       formData.append('calle', form.calle.trim())
       formData.append('numeroCasa', form.numero_casa.trim())
       if (form.complemento.trim()) formData.append('complemento', form.complemento.trim())
-      formData.append('numeroFactura', form.numero_factura.trim())
+      formData.append('numeroFactura', normalizeFactura(form.numero_factura))
       formData.append('cantidadProductos', form.cantidad_productos)
       formData.append('tienda', form.tienda.trim())
       if (form.vendedor.trim()) formData.append('vendedor', form.vendedor.trim())
@@ -429,6 +441,7 @@ export default function RegisterPage() {
                     name="numero_factura"
                     value={form.numero_factura}
                     onChange={handleChange}
+                    onBlur={handleFacturaBlur}
                     placeholder="Ej: 001-001-0012345"
                     error={errors.numero_factura}
                     required

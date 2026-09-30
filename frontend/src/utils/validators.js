@@ -62,6 +62,35 @@ export function validateRequired(value, fieldName) {
   return null
 }
 
+const FACTURA_SEPARATORS_RE = /[\s\-_.]+/
+const DIGITS_RE = /^\d+$/
+
+function padFacturaPart(part, width) {
+  const trimmed = part.replace(/^0+(?=\d)/, '')
+  return trimmed.length > width ? null : trimmed.padStart(width, '0')
+}
+
+/**
+ * Normalizes an invoice number to XXX-XXX-XXXXXXX (mirror of the backend's
+ * utils/factura.js). Accepts three separated groups or exactly 13 digits;
+ * returns null for anything else, e.g. the 8-digit timbrado.
+ */
+export function normalizeFactura(numero) {
+  const parts = String(numero || '').trim().split(FACTURA_SEPARATORS_RE).filter(Boolean)
+  if (parts.length === 0 || !parts.every((p) => DIGITS_RE.test(p))) return null
+
+  if (parts.length === 3) {
+    const est = padFacturaPart(parts[0], 3)
+    const pto = padFacturaPart(parts[1], 3)
+    const num = padFacturaPart(parts[2], 7)
+    if (est && pto && num) return `${est}-${pto}-${num}`
+  }
+
+  const digits = parts.join('')
+  if (digits.length !== 13) return null
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+}
+
 /**
  * Validates invoice number
  */
@@ -69,8 +98,8 @@ export function validateFactura(numero) {
   if (!numero || typeof numero !== 'string' || numero.trim() === '') {
     return 'El numero de factura es requerido'
   }
-  if (numero.trim().length < 3) {
-    return 'El numero de factura debe tener al menos 3 caracteres'
+  if (!normalizeFactura(numero)) {
+    return 'Ingrese el numero completo, ej: 001-001-0012345 (no el timbrado)'
   }
   return null
 }
