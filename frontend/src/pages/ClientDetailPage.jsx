@@ -28,6 +28,7 @@ import Spinner from '../components/ui/Spinner'
 import Modal from '../components/ui/Modal'
 import useApi from '../hooks/useApi'
 import useAuth from '../hooks/useAuth'
+import { normalizeFactura } from '../utils/validators'
 
 export default function ClientDetailPage() {
   const { id } = useParams()
@@ -98,8 +99,15 @@ export default function ClientDetailPage() {
 
   const handleSaveEdit = async () => {
     const cantidad = parseInt(editForm.cantidadProductos, 10)
-    if (!editForm.numeroFactura.trim()) {
+    const numeroTyped = editForm.numeroFactura.trim()
+    if (!numeroTyped) {
       toast.error('El numero de factura es obligatorio')
+      return
+    }
+    // Mirror of the backend: an unchanged number is kept as stored.
+    const numero = numeroTyped === registration.NUMERO_FACTURA ? numeroTyped : normalizeFactura(numeroTyped)
+    if (!numero) {
+      toast.error('Numero de factura invalido. Use el formato 001-001-0012345 (no el timbrado)')
       return
     }
     if (Number.isNaN(cantidad) || cantidad < 1 || cantidad > 999) {
@@ -109,14 +117,14 @@ export default function ClientDetailPage() {
     setSavingEdit(true)
     try {
       await put(`/admin/registros/${id}`, {
-        numeroFactura: editForm.numeroFactura.trim(),
+        numeroFactura: numero,
         cantidadProductos: cantidad,
         tienda: editForm.tienda.trim(),
         vendedor: editForm.vendedor.trim(),
       })
       setRegistration((prev) => ({
         ...prev,
-        NUMERO_FACTURA: editForm.numeroFactura.trim(),
+        NUMERO_FACTURA: numero,
         CANTIDAD_PRODUCTOS: cantidad,
         TIENDA: editForm.tienda.trim() || null,
         VENDEDOR: editForm.vendedor.trim() || null,
